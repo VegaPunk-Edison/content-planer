@@ -509,7 +509,7 @@
             <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
             <p id="detail-meta" class="text-sm text-blue-600 mb-4"></p>
 
-            <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input">&nbsp;Views</span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input">&nbsp;Kommentare</span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input">&nbsp;Likes</span></div>
+            <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
             <div class="font-semibold mb-2">Ressourcen</div>
             <input type="file" id="detail-resource-upload" multiple class="mb-3">
@@ -879,7 +879,7 @@
                                 <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
                             </div>
                             <p class="text-sm text-blue-600 mb-2">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</p>
-                            <p class="text-sm text-gray-500">👁️ ${this.formatNumber(content.views || 0)} Views | 💬 ${this.formatNumber(content.comments || 0)} Kommentare | ❤️ ${this.formatNumber(content.likes || 0)} Likes</p>
+                            <p class="text-sm text-gray-500">👁️ ${this.formatNumber(content.views || 0)} | 💬 ${this.formatNumber(content.comments || 0)} | ❤️ ${this.formatNumber(content.likes || 0)}</p>
                         </div>
                     `).join('');
                 }
