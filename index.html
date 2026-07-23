@@ -1026,10 +1026,6 @@
                                 <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
                             </div>
                         </div>
-                        <div style="position: relative; display: inline-block; margin-top: 0.5rem; margin-left: 0.5rem;">
-                            <div id="campaign-badge" class="format-badge" onclick="app.toggleCampaignCreateMenu()"></div>
-                            <div id="campaign-badge-menu" class="command-menu"></div>
-                        </div>
                     </div>
                     <div id="campaign-start-header-badge" class="format-badge" style="display: none; margin-top: 0.5rem;" onclick="app.openCampaignModal()">Kampagne starten</div>
                 </div>
@@ -1127,7 +1123,6 @@
                 this.selectedDay = null;
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
-                this.selectedCampaignForCreateId = null;
                 this.selectedContentId = null;
                 this.editingCampaignId = null;
                 this.campaignStatus = 'geplant';
@@ -1329,27 +1324,6 @@
                 document.getElementById('format-badge-menu').classList.toggle('active');
             }
 
-            toggleCampaignCreateMenu() {
-                const menu = document.getElementById('campaign-badge-menu');
-                const willOpen = !menu.classList.contains('active');
-                if (willOpen) this.renderCampaignCreateMenu();
-                menu.classList.toggle('active');
-            }
-
-            renderCampaignCreateMenu() {
-                const menu = document.getElementById('campaign-badge-menu');
-                const items = ['<div class="command-menu-item" onclick="app.selectCampaignForCreate(null)">– Keine Kampagne –</div>']
-                    .concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.selectCampaignForCreate(${c.id})">${this.escapeHtml(c.name)}</div>`));
-                menu.innerHTML = items.join('');
-            }
-
-            selectCampaignForCreate(campaignId) {
-                this.selectedCampaignForCreateId = campaignId;
-                const campaign = campaignId ? this.campaigns.find(c => c.id === campaignId) : null;
-                document.getElementById('campaign-badge').textContent = campaign ? campaign.name : 'Kampagne wählen';
-                document.getElementById('campaign-badge-menu').classList.remove('active');
-            }
-
             loadContents() {
                 const stored = localStorage.getItem('calendarContents');
                 return stored ? JSON.parse(stored) : {};
@@ -1406,8 +1380,6 @@
                 document.getElementById('creator-date').textContent = `${this.selectedDay}. ${this.months[this.currentDate.getMonth()]} - ${this.dayNames[dateObj.getDay()]}`;
                 document.getElementById('format-badge').textContent = 'Format auswählen';
                 document.getElementById('format-badge-menu').classList.remove('active');
-                document.getElementById('campaign-badge').textContent = 'Kampagne wählen';
-                document.getElementById('campaign-badge-menu').classList.remove('active');
                 document.getElementById('dashboard-header-actions').style.display = '';
                 document.getElementById('campaign-start-header-badge').style.display = 'none';
                 document.getElementById('creator-date-wheel-section').style.display = 'none';
@@ -1416,7 +1388,6 @@
                 document.body.classList.add('modal-open');
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
-                this.selectedCampaignForCreateId = null;
                 this.updatePlatformIndicator();
                 this.updateInputRowVisibility();
 
@@ -1434,12 +1405,10 @@
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('platform-menu').classList.remove('active');
-                document.getElementById('campaign-badge-menu').classList.remove('active');
                 this.closeContentDetail();
                 this.selectedDay = null;
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
-                this.selectedCampaignForCreateId = null;
                 this.updatePlatformIndicator();
                 this.updateInputRowVisibility();
                 this.activeTab = 'dashboard';
@@ -2659,20 +2628,18 @@
                     conversions: 0,
                     revenue: 0,
                     resources: [],
-                    campaignId: this.selectedCampaignForCreateId
+                    campaignId: null
                 });
 
                 this.saveContents();
                 input.value = '';
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
-                this.selectedCampaignForCreateId = null;
                 this.updatePlatformIndicator();
                 this.updateInputRowVisibility();
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('platform-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = 'Format auswählen';
-                document.getElementById('campaign-badge').textContent = 'Kampagne wählen';
                 this.loadDashboard();
                 this.render();
             }
