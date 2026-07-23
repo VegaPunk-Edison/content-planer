@@ -193,6 +193,12 @@
             border-radius: 0.5rem;
             font-weight: 600;
             font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .format-badge:hover {
+            background: #dbeafe;
         }
 
         .tab-bar {
@@ -424,7 +430,17 @@
                 </button>
                 <div>
                     <h2 id="creator-date" class="text-xl font-bold"></h2>
-                    <div id="format-badge" class="format-badge" style="display: inline-block; margin-top: 0.5rem;"></div>
+                    <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
+                        <div id="format-badge" class="format-badge" onclick="app.toggleFormatMenu()"></div>
+                        <div id="format-badge-menu" class="command-menu">
+                            <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -563,6 +579,12 @@
                 input.value = '';
                 input.focus();
                 document.getElementById('command-menu').classList.remove('active');
+                document.getElementById('format-badge-menu').classList.remove('active');
+                document.getElementById('format-badge').textContent = format;
+            }
+
+            toggleFormatMenu() {
+                document.getElementById('format-badge-menu').classList.toggle('active');
             }
 
             loadContents() {
@@ -610,7 +632,8 @@
             openCreator() {
                 const dateObj = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.selectedDay);
                 document.getElementById('creator-date').textContent = `${this.selectedDay}. ${this.months[this.currentDate.getMonth()]} - ${this.dayNames[dateObj.getDay()]}`;
-                document.getElementById('format-badge').textContent = '- Wähle ein Format';
+                document.getElementById('format-badge').textContent = 'Format auswählen';
+                document.getElementById('format-badge-menu').classList.remove('active');
 
                 document.getElementById('content-creator-view').classList.add('active');
                 document.body.classList.add('modal-open');
@@ -625,6 +648,7 @@
                 document.body.classList.remove('modal-open');
                 document.getElementById('content-input').value = '';
                 document.getElementById('command-menu').classList.remove('active');
+                document.getElementById('format-badge-menu').classList.remove('active');
                 this.selectedDay = null;
                 this.selectedFormat = null;
                 this.activeTab = 'dashboard';
@@ -744,6 +768,7 @@
                 input.value = '';
                 this.selectedFormat = null;
                 document.getElementById('command-menu').classList.remove('active');
+                document.getElementById('format-badge').textContent = 'Format auswählen';
                 this.loadDashboard();
             }
 
