@@ -1180,10 +1180,6 @@
                 });
 
                 const campaignPlatformInput = document.getElementById('campaign-platform-input');
-                campaignPlatformInput.addEventListener('focus', () => {
-                    document.getElementById('campaign-platform-menu').classList.add('active');
-                    this.renderCampaignPlatformMenu(campaignPlatformInput.value);
-                });
                 campaignPlatformInput.addEventListener('input', (e) => this.handleCampaignPlatformInput(e));
                 campaignPlatformInput.addEventListener('keypress', (e) => {
                     if (e.key !== 'Enter') return;
