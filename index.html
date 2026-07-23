@@ -156,6 +156,15 @@
             background: #2563eb;
         }
 
+        .month-picker-btn-delete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .month-picker-btn-delete:hover {
+            background: #fecaca;
+        }
+
         #content-creator-view {
             display: none;
             position: fixed;
@@ -597,6 +606,7 @@
             <div id="detail-status-buttons" class="mb-6" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
 
             <div class="month-picker-footer">
+                <button class="month-picker-btn month-picker-btn-delete" onclick="app.deleteContent()">Löschen</button>
                 <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeContentDetail()">Schließen</button>
             </div>
         </div>
@@ -991,6 +1001,19 @@
             closeContentDetail() {
                 document.getElementById('content-detail-modal').classList.remove('active');
                 this.selectedContentId = null;
+            }
+
+            deleteContent() {
+                const content = this.getSelectedContent();
+                if (!content) return;
+                if (!confirm(`"${content.title}" wirklich löschen?`)) return;
+
+                const dateKey = this.getDateKey(this.selectedDay);
+                this.contents[dateKey] = (this.contents[dateKey] || []).filter(c => c.id !== content.id);
+                this.saveContents();
+                this.closeContentDetail();
+                this.loadDashboard();
+                this.render();
             }
 
             renderContentDetail(content) {
