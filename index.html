@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalender App mit Content Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+        .calendar-day:hover {
+            background: #dbeafe;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .calendar-day.today {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .month-selector {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .month-selector:hover {
+            color: #3b82f6;
+        }
+
+        .month-picker {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .month-picker.active {
+            display: flex;
+        }
+
+        .month-picker-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .month-picker-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .month-item {
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .month-item:hover {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .month-item.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .month-picker-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .month-picker-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .month-picker-btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .month-picker-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .month-picker-btn-confirm {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .month-picker-btn-confirm:hover {
+            background: #2563eb;
+        }
+
+        #content-creator-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+        }
+
+        #content-creator-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-bar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #3b82f6;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.25rem;
+        }
+
+        .back-button:hover {
+            color: #2563eb;
+        }
+
+        .format-badge {
+            background: #eff6ff;
+            color: #3b82f6;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 2rem;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .tab {
+            padding: 1rem 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .tab:hover {
+            color: #3b82f6;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .content-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .content-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .content-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-live {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-scheduled {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-draft {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .stat-box {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .content-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .doc-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .doc-item:hover {
+            background: #f9fafb;
+            border-color: #3b82f6;
+        }
+
+        .command-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 250px;
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .command-menu.active {
+            display: block;
+        }
+
+        .command-menu-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .command-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .command-menu-item:hover {
+            background: #f3f4f6;
+        }
+
+        .todo-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            gap: 1rem;
+        }
+
+        #content-input {
+            border: none;
+            background: transparent;
+            font-size: 1.125rem;
+            flex: 1;
+            outline: none;
+            padding: 0;
+        }
+
+        #content-input::placeholder {
+            color: #d1d5db;
+        }
+
+        .add-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .add-btn:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+    <!-- MONTH PICKER -->
+    <div id="month-picker" class="month-picker">
+        <div class="month-picker-content">
+            <div class="month-picker-title">Monat wählen</div>
+            <div class="month-grid" id="month-grid">
+                <!-- Monate werden hier eingefügt -->
+            </div>
+            <div class="month-picker-footer">
+                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeMonthPicker()">Abbrechen</button>
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.confirmMonthSelection()">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KALENDER ANSICHT -->
+    <div id="calendar-view" class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div id="calendar-container"></div>
+        </div>
+    </div>
+
+    <!-- CONTENT CREATOR VIEW -->
+    <div id="content-creator-view">
+        <!-- Header -->
+        <div class="header-bar">
+            <div class="header-title">
+                <button id="close-creator" class="back-button">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <div>
+                    <h2 id="creator-date" class="text-xl font-bold"></h2>
+                    <div id="format-badge" class="format-badge" style="display: inline-block; margin-top: 0.5rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
+            <div class="tab" onclick="app.switchTab('docs')">Docs</div>
+            <div class="tab" onclick="app.switchTab('stats')">Stats</div>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="text-2xl font-bold mb-6">Aktive & geplante Contents</h3>
+
+                <!-- Content Input -->
+                <div class="todo-input-wrapper mb-6">
+                    <input
+                        type="text"
+                        id="content-input"
+                        placeholder="Neuen Content planen..."
+                        autocomplete="off"
+                    >
+                    <button id="add-content-btn" class="add-btn">+</button>
+
+                    <!-- Command Menu -->
+                    <div id="command-menu" class="command-menu">
+                        <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
+                        <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
+                        <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
+                        <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
+                        <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
+                        <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                    </div>
+                </div>
+
+                <div id="dashboard-content" class="content-list">
+                    <!-- Inhalte werden hier eingefügt -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Docs Tab -->
+        <div id="docs-tab" class="tab-content">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="text-2xl font-bold mb-6">Dokumentation & Notizen</h3>
+
+                <div id="docs-content" class="content-list">
+                    <!-- Docs werden hier eingefügt -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div class="max-w-6xl mx-auto">
+                <h3 class="text-2xl font-bold mb-6">Performance & Statistiken</h3>
+
+                <div id="stats-content" class="dashboard-grid">
+                    <!-- Stats werden hier eingefügt -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CalendarApp {
+            constructor() {
+                this.currentDate = new Date();
+                this.selectedMonthForPicker = this.currentDate.getMonth();
+                this.months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                              'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+                this.dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+                this.selectedDay = null;
+                this.selectedFormat = null;
+                this.contents = this.loadContents();
+                this.activeTab = 'dashboard';
+                this.init();
+            }
+
+            init() {
+                this.render();
+                document.getElementById('close-creator').addEventListener('click', () => this.closeCreator());
+                document.getElementById('add-content-btn').addEventListener('click', () => this.addContent());
+                document.getElementById('content-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addContent();
+                });
+                document.getElementById('content-input').addEventListener('input', (e) => this.handleCommandInput(e));
+            }
+
+            openMonthPicker() {
+                this.selectedMonthForPicker = this.currentDate.getMonth();
+                this.renderMonthPicker();
+                document.getElementById('month-picker').classList.add('active');
+            }
+
+            closeMonthPicker() {
+                document.getElementById('month-picker').classList.remove('active');
+            }
+
+            renderMonthPicker() {
+                const monthGrid = document.getElementById('month-grid');
+                monthGrid.innerHTML = this.months.map((month, index) => {
+                    const isActive = index === this.selectedMonthForPicker ? 'active' : '';
+                    return `<div class="month-item ${isActive}" onclick="app.selectMonthForPicker(${index})">${month}</div>`;
+                }).join('');
+            }
+
+            selectMonthForPicker(monthIndex) {
+                this.selectedMonthForPicker = monthIndex;
+                this.renderMonthPicker();
+            }
+
+            confirmMonthSelection() {
+                this.currentDate.setMonth(this.selectedMonthForPicker);
+                this.render();
+                this.closeMonthPicker();
+            }
+
+            handleCommandInput(e) {
+                const value = e.target.value;
+                const menu = document.getElementById('command-menu');
+
+                if (value.startsWith('/') || value.startsWith("'")) {
+                    menu.classList.add('active');
+                } else {
+                    menu.classList.remove('active');
+                    this.selectedFormat = null;
+                }
+            }
+
+            selectFormat(format) {
+                this.selectedFormat = format;
+                const input = document.getElementById('content-input');
+                input.value = '';
+                input.focus();
+                document.getElementById('command-menu').classList.remove('active');
+            }
+
+            loadContents() {
+                const stored = localStorage.getItem('calendarContents');
+                return stored ? JSON.parse(stored) : {};
+            }
+
+            saveContents() {
+                localStorage.setItem('calendarContents', JSON.stringify(this.contents));
+            }
+
+            getDaysInMonth(date) {
+                return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+            }
+
+            generateCalendarDays() {
+                const daysInMonth = this.getDaysInMonth(this.currentDate);
+                const days = [];
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    days.push(i);
+                }
+
+                return days;
+            }
+
+            isToday(day) {
+                if (!day) return false;
+                const today = new Date();
+                return day === today.getDate() &&
+                       this.currentDate.getMonth() === today.getMonth() &&
+                       this.currentDate.getFullYear() === today.getFullYear();
+            }
+
+            getDateKey(day) {
+                return `${this.currentDate.getFullYear()}-${this.currentDate.getMonth()}-${day}`;
+            }
+
+            selectDay(day) {
+                if (!day) return;
+                this.selectedDay = day;
+                this.openCreator();
+            }
+
+            openCreator() {
+                const dateObj = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), this.selectedDay);
+                document.getElementById('creator-date').textContent = `${this.selectedDay}. ${this.months[this.currentDate.getMonth()]} - ${this.dayNames[dateObj.getDay()]}`;
+                document.getElementById('format-badge').textContent = '- Wähle ein Format';
+
+                document.getElementById('content-creator-view').classList.add('active');
+                document.body.classList.add('modal-open');
+                document.getElementById('content-input').focus();
+                this.selectedFormat = null;
+
+                this.loadDashboard();
+            }
+
+            closeCreator() {
+                document.getElementById('content-creator-view').classList.remove('active');
+                document.body.classList.remove('modal-open');
+                document.getElementById('content-input').value = '';
+                document.getElementById('command-menu').classList.remove('active');
+                this.selectedDay = null;
+                this.selectedFormat = null;
+                this.activeTab = 'dashboard';
+            }
+
+            switchTab(tab) {
+                this.activeTab = tab;
+
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                event.target.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(t => {
+                    t.classList.remove('active');
+                });
+                document.getElementById(tab + '-tab').classList.add('active');
+
+                if (tab === 'dashboard') this.loadDashboard();
+                if (tab === 'docs') this.loadDocs();
+                if (tab === 'stats') this.loadStats();
+            }
+
+            loadDashboard() {
+                const dateKey = this.getDateKey(this.selectedDay);
+                const contents = this.contents[dateKey] || [];
+
+                const dashboardContent = document.getElementById('dashboard-content');
+
+                if (contents.length === 0) {
+                    dashboardContent.innerHTML = '<p class="text-gray-400 text-center py-8">Noch kein Content für diesen Tag geplant</p>';
+                } else {
+                    dashboardContent.innerHTML = contents.map(content => `
+                        <div class="content-card">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-lg">${this.escapeHtml(content.title)}</h4>
+                                <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
+                            </div>
+                            <p class="text-sm text-blue-600 mb-2">${content.format}</p>
+                            <p class="text-sm text-gray-500">👁️ ${content.views || 0} Views | 💬 ${content.engagement || 0} Engagement</p>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            loadDocs() {
+                const dateKey = this.getDateKey(this.selectedDay);
+                const contents = this.contents[dateKey] || [];
+
+                const docsContent = document.getElementById('docs-content');
+
+                if (contents.length === 0) {
+                    docsContent.innerHTML = '<p class="text-gray-400 text-center py-8">Keine Dokumentation vorhanden</p>';
+                } else {
+                    let docsHtml = '';
+                    contents.forEach(content => {
+                        docsHtml += `
+                            <div class="doc-item">
+                                <div class="font-semibold">${this.escapeHtml(content.title)}</div>
+                                <div class="text-gray-600 text-sm mt-1">${content.format}</div>
+                            </div>
+                        `;
+                    });
+                    docsContent.innerHTML = docsHtml;
+                }
+            }
+
+            loadStats() {
+                const dateKey = this.getDateKey(this.selectedDay);
+                const contents = this.contents[dateKey] || [];
+
+                const totalViews = contents.reduce((sum, c) => sum + (c.views || 0), 0);
+                const totalEngagement = contents.reduce((sum, c) => sum + (c.engagement || 0), 0);
+
+                const statsContent = document.getElementById('stats-content');
+                statsContent.innerHTML = `
+                    <div class="stat-box">
+                        <div class="stat-value">${totalViews}</div>
+                        <div class="stat-label">Gesamte Views</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${contents.length}</div>
+                        <div class="stat-label">Contents erstellt</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${totalEngagement}</div>
+                        <div class="stat-label">Gesamt Engagements</div>
+                    </div>
+                `;
+            }
+
+            addContent() {
+                const input = document.getElementById('content-input');
+                const text = input.value.trim();
+
+                if (!text) return;
+                if (!this.selectedFormat) {
+                    alert('Bitte wähle erst ein Format mit / oder \'');
+                    return;
+                }
+
+                const dateKey = this.getDateKey(this.selectedDay);
+                if (!this.contents[dateKey]) {
+                    this.contents[dateKey] = [];
+                }
+
+                this.contents[dateKey].push({
+                    id: Date.now(),
+                    title: text,
+                    format: this.selectedFormat,
+                    status: 'draft',
+                    views: Math.floor(Math.random() * 1000),
+                    engagement: Math.floor(Math.random() * 500)
+                });
+
+                this.saveContents();
+                input.value = '';
+                this.selectedFormat = null;
+                document.getElementById('command-menu').classList.remove('active');
+                this.loadDashboard();
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            render() {
+                const monthYear = this.months[this.currentDate.getMonth()] + ' ' + this.currentDate.getFullYear();
+                const calendarDays = this.generateCalendarDays();
+
+                let html = `
+                    <div class="flex items-center justify-center mb-8">
+                        <h1 class="text-3xl font-bold text-gray-800 month-selector" onclick="app.openMonthPicker()">${monthYear}</h1>
+                    </div>
+
+                    <div class="calendar-grid">
+                `;
+
+                calendarDays.forEach(day => {
+                    const isToday = this.isToday(day);
+                    const cls = isToday ? 'today' : '';
+                    html += `<div class="calendar-day ${cls}" onclick="app.selectDay(${day})">${day}</div>`;
+                });
+
+                html += `</div>`;
+
+                document.getElementById('calendar-container').innerHTML = html;
+            }
+        }
+
+        const app = new CalendarApp();
+    </script>
+</body>
+</html>
