@@ -860,6 +860,7 @@
             <div id="campaign-step-goal" class="campaign-step mb-4" style="display: none;">
                 <label class="text-xs text-gray-500 block mb-1">Ziel</label>
                 <select id="campaign-goal" class="detail-date-input" style="width: 100%;">
+                    <option value="" disabled>Ziel auswählen</option>
                     <option value="reichweite">Reichweite aufbauen</option>
                     <option value="produkt">Produkt einführen</option>
                     <option value="engagement">Engagement steigern</option>
@@ -1936,7 +1937,7 @@
 
                 document.getElementById('campaign-name').value = campaign ? campaign.name : '';
                 document.getElementById('campaign-budget').value = campaign ? campaign.budget : 0;
-                document.getElementById('campaign-goal').value = campaign ? campaign.goal : 'reichweite';
+                document.getElementById('campaign-goal').value = campaign ? campaign.goal : '';
                 document.getElementById('campaign-delete-btn').style.display = campaign ? 'block' : 'none';
 
                 this.campaignStatus = campaign ? campaign.status : 'geplant';
@@ -2070,7 +2071,7 @@
                 summaryEl.innerHTML = `
                     <div class="drilldown-row"><span>Name</span><span class="drilldown-row-value">${this.escapeHtml(document.getElementById('campaign-name').value)}</span></div>
                     <div class="drilldown-row"><span>Plattform(en)</span><span class="drilldown-row-value">${this.escapeHtml(platforms)}</span></div>
-                    <div class="drilldown-row"><span>Ziel</span><span class="drilldown-row-value">${goalLabels[goalValue] || goalValue}</span></div>
+                    <div class="drilldown-row"><span>Ziel</span><span class="drilldown-row-value">${goalLabels[goalValue] || '– keine Auswahl –'}</span></div>
                     <div class="drilldown-row"><span>Start</span><span class="drilldown-row-value">${this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : '– offen –'}</span></div>
                     <div class="drilldown-row"><span>Ende</span><span class="drilldown-row-value">${this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : '– offen –'}</span></div>
                     <div class="drilldown-row"><span>Budget</span><span class="drilldown-row-value">${budget} €</span></div>
