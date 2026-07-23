@@ -820,28 +820,39 @@
         <div class="month-picker-content" style="max-width: 480px; text-align: left; max-height: 85vh; overflow-y: auto;">
             <h3 class="text-xl font-bold mb-4">Kampagne</h3>
 
-            <label class="text-xs text-gray-500 block mb-1">Name</label>
-            <input type="text" id="campaign-name" class="detail-date-input mb-3" style="width: 100%;">
-
-            <label class="text-xs text-gray-500 block mb-1">Plattform(en)</label>
-            <div id="campaign-platform-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem;"></div>
-            <div style="position: relative; margin-bottom: 0.75rem;">
-                <input type="text" id="campaign-platform-input" placeholder="/ um Plattform hinzuzufügen" class="detail-date-input" style="width: 100%;">
-                <div id="campaign-platform-menu" class="command-menu"></div>
+            <!-- Schritt: Name -->
+            <div id="campaign-step-name" class="campaign-step">
+                <label class="text-xs text-gray-500 block mb-1">Name</label>
+                <input type="text" id="campaign-name" class="detail-date-input mb-4" style="width: 100%;">
             </div>
 
-            <label class="text-xs text-gray-500 block mb-1">Ziel</label>
-            <select id="campaign-goal" class="detail-date-input mb-3" style="width: 100%;">
-                <option value="reichweite">Reichweite aufbauen</option>
-                <option value="produkt">Produkt einführen</option>
-                <option value="engagement">Engagement steigern</option>
-                <option value="leads">Leads generieren</option>
-                <option value="verkauf">Verkäufe steigern</option>
-                <option value="community">Community aufbauen</option>
-                <option value="branding">Markenbekanntheit</option>
-            </select>
+            <!-- Schritt: Plattform(en) -->
+            <div id="campaign-step-platform" class="campaign-step" style="display: none;">
+                <label class="text-xs text-gray-500 block mb-1">Plattform(en)</label>
+                <div id="campaign-platform-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem;"></div>
+                <div style="position: relative; margin-bottom: 0.5rem;">
+                    <input type="text" id="campaign-platform-input" placeholder="/ um Plattform hinzuzufügen" class="detail-date-input" style="width: 100%;">
+                    <div id="campaign-platform-menu" class="command-menu"></div>
+                </div>
+                <button class="month-picker-btn month-picker-btn-confirm" style="padding: 0.5rem;" onclick="app.confirmCampaignPlatforms()">Weiter</button>
+            </div>
 
-            <div class="mb-4">
+            <!-- Schritt: Ziel -->
+            <div id="campaign-step-goal" class="campaign-step mb-4" style="display: none;">
+                <label class="text-xs text-gray-500 block mb-1">Ziel</label>
+                <select id="campaign-goal" class="detail-date-input" style="width: 100%;">
+                    <option value="reichweite">Reichweite aufbauen</option>
+                    <option value="produkt">Produkt einführen</option>
+                    <option value="engagement">Engagement steigern</option>
+                    <option value="leads">Leads generieren</option>
+                    <option value="verkauf">Verkäufe steigern</option>
+                    <option value="community">Community aufbauen</option>
+                    <option value="branding">Markenbekanntheit</option>
+                </select>
+            </div>
+
+            <!-- Schritt: Start -->
+            <div id="campaign-step-start" class="campaign-step mb-4" style="display: none;">
                 <p class="text-sm text-gray-500">Start: <span id="campaign-start-display" class="date-display-link" onclick="app.toggleCampaignStartWheel()"></span></p>
                 <div id="campaign-start-wheel-section" style="display: none; margin-top: 0.5rem;">
                     <div class="date-wheel-picker">
@@ -854,7 +865,8 @@
                 </div>
             </div>
 
-            <div class="mb-4" id="campaign-end-section" style="display: none;">
+            <!-- Schritt: Ende -->
+            <div id="campaign-step-end" class="campaign-step mb-4" style="display: none;">
                 <p class="text-sm text-gray-500">Ende: <span id="campaign-end-display" class="date-display-link" onclick="app.toggleCampaignEndWheel()"></span></p>
                 <div id="campaign-end-wheel-section" style="display: none; margin-top: 0.5rem;">
                     <div class="date-wheel-picker">
@@ -867,47 +879,64 @@
                 </div>
             </div>
 
-            <label class="text-xs text-gray-500 block mb-1">Budget (€)</label>
-            <input type="text" inputmode="numeric" id="campaign-budget" class="detail-date-input mb-3" style="width: 100%;">
-
-            <label class="text-xs text-gray-500 block mb-2">Status</label>
-            <div id="campaign-status-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;"></div>
-
-            <div class="font-semibold mb-2">Ressourcen</div>
-            <div class="campaign-resource-grid mb-4">
-                <div class="campaign-resource-slot">
-                    <label class="campaign-resource-label">💡 Idee & Konzept</label>
-                    <input type="file" multiple data-category="idee" class="campaign-resource-upload mb-2">
-                    <div class="campaign-resource-list" data-category="idee"></div>
-                </div>
-                <div class="campaign-resource-slot">
-                    <label class="campaign-resource-label">📋 Strategie & Planung</label>
-                    <input type="file" multiple data-category="strategie" class="campaign-resource-upload mb-2">
-                    <div class="campaign-resource-list" data-category="strategie"></div>
-                </div>
-                <div class="campaign-resource-slot">
-                    <label class="campaign-resource-label">📊 Datenanalyse (Tracking)</label>
-                    <input type="file" multiple data-category="tracking" class="campaign-resource-upload mb-2">
-                    <div class="campaign-resource-list" data-category="tracking"></div>
-                </div>
-                <div class="campaign-resource-slot">
-                    <label class="campaign-resource-label">➡️ Next Steps</label>
-                    <input type="file" multiple data-category="nextSteps" class="campaign-resource-upload mb-2">
-                    <div class="campaign-resource-list" data-category="nextSteps"></div>
-                </div>
-                <div class="campaign-resource-slot">
-                    <label class="campaign-resource-label">📜 Verträge & Rechtliches</label>
-                    <input type="file" multiple data-category="vertraege" class="campaign-resource-upload mb-2">
-                    <div class="campaign-resource-list" data-category="vertraege"></div>
-                </div>
+            <!-- Schritt: Budget -->
+            <div id="campaign-step-budget" class="campaign-step" style="display: none;">
+                <label class="text-xs text-gray-500 block mb-1">Budget (€)</label>
+                <input type="text" inputmode="numeric" id="campaign-budget" class="detail-date-input mb-2" style="width: 100%;">
+                <button class="month-picker-btn month-picker-btn-confirm" style="padding: 0.5rem;" onclick="app.confirmCampaignBudget()">Weiter</button>
             </div>
 
-            <div id="campaign-linked-content" class="mb-4"></div>
+            <!-- Schritt: Status -->
+            <div id="campaign-step-status" class="campaign-step mb-4" style="display: none;">
+                <label class="text-xs text-gray-500 block mb-2">Status</label>
+                <div id="campaign-status-buttons" style="display: flex; gap: 0.5rem;"></div>
+            </div>
 
-            <div class="month-picker-footer">
-                <button class="month-picker-btn month-picker-btn-delete" id="campaign-delete-btn" onclick="app.deleteCampaign()" style="display: none;">Löschen</button>
-                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignModal()">Abbrechen</button>
-                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaign()">Speichern</button>
+            <!-- Schritt: Ressourcen -->
+            <div id="campaign-step-resources" class="campaign-step" style="display: none;">
+                <div class="font-semibold mb-2">Ressourcen</div>
+                <div class="campaign-resource-grid mb-3">
+                    <div class="campaign-resource-slot">
+                        <label class="campaign-resource-label">💡 Idee & Konzept</label>
+                        <input type="file" multiple data-category="idee" class="campaign-resource-upload mb-2">
+                        <div class="campaign-resource-list" data-category="idee"></div>
+                    </div>
+                    <div class="campaign-resource-slot">
+                        <label class="campaign-resource-label">📋 Strategie & Planung</label>
+                        <input type="file" multiple data-category="strategie" class="campaign-resource-upload mb-2">
+                        <div class="campaign-resource-list" data-category="strategie"></div>
+                    </div>
+                    <div class="campaign-resource-slot">
+                        <label class="campaign-resource-label">📊 Datenanalyse (Tracking)</label>
+                        <input type="file" multiple data-category="tracking" class="campaign-resource-upload mb-2">
+                        <div class="campaign-resource-list" data-category="tracking"></div>
+                    </div>
+                    <div class="campaign-resource-slot">
+                        <label class="campaign-resource-label">➡️ Next Steps</label>
+                        <input type="file" multiple data-category="nextSteps" class="campaign-resource-upload mb-2">
+                        <div class="campaign-resource-list" data-category="nextSteps"></div>
+                    </div>
+                    <div class="campaign-resource-slot">
+                        <label class="campaign-resource-label">📜 Verträge & Rechtliches</label>
+                        <input type="file" multiple data-category="vertraege" class="campaign-resource-upload mb-2">
+                        <div class="campaign-resource-list" data-category="vertraege"></div>
+                    </div>
+                </div>
+                <button class="month-picker-btn month-picker-btn-confirm" style="padding: 0.5rem;" onclick="app.confirmCampaignResourcesStep()">Weiter zur Übersicht</button>
+            </div>
+
+            <!-- Schritt: Übersicht -->
+            <div id="campaign-step-summary" class="campaign-step" style="display: none;">
+                <div class="font-semibold mb-2">Übersicht</div>
+                <div id="campaign-summary-content" class="mb-4"></div>
+
+                <div id="campaign-linked-content" class="mb-4"></div>
+
+                <div class="month-picker-footer">
+                    <button class="month-picker-btn month-picker-btn-delete" id="campaign-delete-btn" onclick="app.deleteCampaign()" style="display: none;">Löschen</button>
+                    <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignModal()">Abbrechen</button>
+                    <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaign()">Speichern</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1043,6 +1072,8 @@
                 this.selectedContentId = null;
                 this.editingCampaignId = null;
                 this.campaignStatus = 'geplant';
+                this.campaignStepOrder = ['name', 'platform', 'goal', 'start', 'end', 'budget', 'status', 'resources', 'summary'];
+                this.campaignVisibleSteps = 1;
                 this.contents = this.loadContents();
                 this.campaigns = this.loadCampaigns();
                 this.activeTab = 'dashboard';
@@ -1118,6 +1149,19 @@
                 ['campaign-end-day', 'campaign-end-month', 'campaign-end-year'].forEach(id => {
                     const field = id.replace('campaign-end-', '');
                     this.wireWheelScroll('wheel-' + id, v => { this.campaignEndWheel[field] = v; });
+                });
+
+                const campaignNameInput = document.getElementById('campaign-name');
+                campaignNameInput.addEventListener('blur', () => this.confirmCampaignName());
+                campaignNameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') campaignNameInput.blur();
+                });
+
+                document.getElementById('campaign-goal').addEventListener('change', () => this.handleCampaignGoalChange());
+
+                const campaignBudgetInput = document.getElementById('campaign-budget');
+                campaignBudgetInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.confirmCampaignBudget();
                 });
             }
 
@@ -1816,7 +1860,6 @@
                     this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : 'nicht festgelegt';
                 document.getElementById('campaign-start-wheel-section').style.display = 'none';
                 document.getElementById('campaign-end-wheel-section').style.display = 'none';
-                document.getElementById('campaign-end-section').style.display = this.campaignDraftStart ? 'block' : 'none';
 
                 if (!campaign) {
                     this.campaignDraftResources = { idee: [], strategie: [], tracking: [], nextSteps: [], vertraege: [] };
@@ -1829,7 +1872,84 @@
                     document.getElementById('campaign-linked-content').innerHTML = '';
                 }
 
+                this.showCampaignStepsUpTo(campaign ? this.campaignStepOrder.length : 1);
+
                 document.getElementById('campaign-modal').classList.add('active');
+            }
+
+            showCampaignStepsUpTo(count) {
+                this.campaignVisibleSteps = count;
+                this.campaignStepOrder.forEach((key, i) => {
+                    const el = document.getElementById('campaign-step-' + key);
+                    if (el) el.style.display = i < count ? '' : 'none';
+                });
+                this.renderCampaignSummary();
+            }
+
+            advanceCampaignStep(fromKey) {
+                const idx = this.campaignStepOrder.indexOf(fromKey);
+                if (idx === -1) return;
+                if (this.campaignVisibleSteps < idx + 2) {
+                    this.showCampaignStepsUpTo(idx + 2);
+                } else {
+                    this.renderCampaignSummary();
+                }
+            }
+
+            confirmCampaignName() {
+                const name = document.getElementById('campaign-name').value.trim();
+                if (!name) return;
+                this.advanceCampaignStep('name');
+            }
+
+            confirmCampaignPlatforms() {
+                this.advanceCampaignStep('platform');
+            }
+
+            handleCampaignGoalChange() {
+                this.advanceCampaignStep('goal');
+            }
+
+            confirmCampaignBudget() {
+                this.advanceCampaignStep('budget');
+            }
+
+            confirmCampaignResourcesStep() {
+                this.advanceCampaignStep('resources');
+            }
+
+            renderCampaignSummary() {
+                const summaryEl = document.getElementById('campaign-summary-content');
+                if (!summaryEl) return;
+
+                const goalLabels = {
+                    reichweite: 'Reichweite aufbauen', produkt: 'Produkt einführen', engagement: 'Engagement steigern',
+                    leads: 'Leads generieren', verkauf: 'Verkäufe steigern', community: 'Community aufbauen', branding: 'Markenbekanntheit'
+                };
+                const goalValue = document.getElementById('campaign-goal').value;
+                const budget = document.getElementById('campaign-budget').value || 0;
+                const platforms = this.campaignDraftPlatforms.length > 0 ? this.campaignDraftPlatforms.join(', ') : '– keine –';
+
+                const resourceLabels = {
+                    idee: 'Idee & Konzept', strategie: 'Strategie & Planung', tracking: 'Datenanalyse (Tracking)',
+                    nextSteps: 'Next Steps', vertraege: 'Verträge & Rechtliches'
+                };
+                const target = this.getCampaignResourceTarget();
+                const resourcesHtml = Object.keys(resourceLabels).map(cat => {
+                    const count = (target.resources && target.resources[cat]) ? target.resources[cat].length : 0;
+                    return `<div class="drilldown-row"><span>${resourceLabels[cat]}</span><span class="drilldown-row-value">${count} Datei(en)</span></div>`;
+                }).join('');
+
+                summaryEl.innerHTML = `
+                    <div class="drilldown-row"><span>Name</span><span class="drilldown-row-value">${this.escapeHtml(document.getElementById('campaign-name').value)}</span></div>
+                    <div class="drilldown-row"><span>Plattform(en)</span><span class="drilldown-row-value">${this.escapeHtml(platforms)}</span></div>
+                    <div class="drilldown-row"><span>Ziel</span><span class="drilldown-row-value">${goalLabels[goalValue] || goalValue}</span></div>
+                    <div class="drilldown-row"><span>Start</span><span class="drilldown-row-value">${this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : '– offen –'}</span></div>
+                    <div class="drilldown-row"><span>Ende</span><span class="drilldown-row-value">${this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : '– offen –'}</span></div>
+                    <div class="drilldown-row"><span>Budget</span><span class="drilldown-row-value">${budget} €</span></div>
+                    <div class="drilldown-row"><span>Status</span><span class="drilldown-row-value">${this.campaignStatus.toUpperCase()}</span></div>
+                    ${resourcesHtml}
+                `;
             }
 
             buildCampaignWheel(prefix, day, month, year) {
@@ -1852,7 +1972,7 @@
                 this.campaignDraftStart = `${w.year}-${String(w.month + 1).padStart(2, '0')}-${String(w.day).padStart(2, '0')}`;
                 document.getElementById('campaign-start-display').textContent = this.formatCampaignDate(this.campaignDraftStart);
                 document.getElementById('campaign-start-wheel-section').style.display = 'none';
-                document.getElementById('campaign-end-section').style.display = 'block';
+                this.advanceCampaignStep('start');
             }
 
             toggleCampaignEndWheel() {
@@ -1865,6 +1985,7 @@
                 this.campaignDraftEnd = `${w.year}-${String(w.month + 1).padStart(2, '0')}-${String(w.day).padStart(2, '0')}`;
                 document.getElementById('campaign-end-display').textContent = this.formatCampaignDate(this.campaignDraftEnd);
                 document.getElementById('campaign-end-wheel-section').style.display = 'none';
+                this.advanceCampaignStep('end');
             }
 
             renderCampaignPlatformChips() {
@@ -2001,6 +2122,7 @@
             setCampaignStatusDraft(status) {
                 this.campaignStatus = status;
                 this.renderCampaignStatusButtons();
+                this.advanceCampaignStep('status');
             }
 
             renderCampaignLinkedContent(campaign) {
