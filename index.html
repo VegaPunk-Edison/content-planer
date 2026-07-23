@@ -382,25 +382,6 @@
             color: #d1d5db;
         }
 
-        .add-btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-
-        .add-btn:hover {
-            background: #2563eb;
-        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4">
@@ -474,7 +455,6 @@
                             placeholder="Neuen Content planen... / um Plattform auszuwählen"
                             autocomplete="off"
                         >
-                        <button id="add-content-btn" class="add-btn">+</button>
 
                         <!-- Command Menu: Format -->
                         <div id="command-menu" class="command-menu">
@@ -540,7 +520,6 @@
             init() {
                 this.render();
                 document.getElementById('close-creator').addEventListener('click', () => this.closeCreator());
-                document.getElementById('add-content-btn').addEventListener('click', () => this.addContent());
                 document.getElementById('content-input').addEventListener('keypress', (e) => {
                     if (e.key !== 'Enter') return;
                     const input = e.target;
