@@ -303,8 +303,20 @@
             cursor: pointer;
         }
 
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+
+        .stat-divider {
+            color: #d1d5db;
+        }
+
         .stat-input {
-            width: 3.5rem;
+            width: 2.75rem;
             border: none;
             border-bottom: 1px dashed transparent;
             background: transparent;
@@ -480,11 +492,7 @@
             <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
             <p id="detail-meta" class="text-sm text-blue-600 mb-4"></p>
 
-            <p class="text-sm text-gray-500 mb-4">
-                👁️ <input type="text" inputmode="numeric" id="detail-views" class="stat-input"> Views |
-                💬 <input type="text" inputmode="numeric" id="detail-comments" class="stat-input"> Kommentare |
-                ❤️ <input type="text" inputmode="numeric" id="detail-likes" class="stat-input"> Likes
-            </p>
+            <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input">&nbsp;Views</span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input">&nbsp;Kommentare</span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input">&nbsp;Likes</span></div>
 
             <div class="font-semibold mb-2">Ressourcen</div>
             <input type="file" id="detail-resource-upload" multiple class="mb-3">
