@@ -1324,10 +1324,8 @@
 
             renderCampaignCreateMenu() {
                 const menu = document.getElementById('campaign-badge-menu');
-                const items = [
-                    '<div class="command-menu-item" onclick="app.openCampaignModal()">+ Neue Kampagne</div>',
-                    '<div class="command-menu-item" onclick="app.selectCampaignForCreate(null)">– Keine Kampagne –</div>'
-                ].concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.selectCampaignForCreate(${c.id})">${this.escapeHtml(c.name)}</div>`));
+                const items = ['<div class="command-menu-item" onclick="app.selectCampaignForCreate(null)">– Keine Kampagne –</div>']
+                    .concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.selectCampaignForCreate(${c.id})">${this.escapeHtml(c.name)}</div>`));
                 menu.innerHTML = items.join('');
             }
 
