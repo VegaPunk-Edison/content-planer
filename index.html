@@ -1900,18 +1900,32 @@
                     document.getElementById('campaign-linked-content').innerHTML = '';
                 }
 
+                this.campaignVisibleSteps = 0;
                 this.showCampaignStepsUpTo(campaign ? this.campaignStepOrder.length : 1);
 
                 document.getElementById('campaign-modal').classList.add('active');
             }
 
             showCampaignStepsUpTo(count) {
+                const previousCount = this.campaignVisibleSteps;
                 this.campaignVisibleSteps = count;
                 this.campaignStepOrder.forEach((key, i) => {
                     const el = document.getElementById('campaign-step-' + key);
                     if (el) el.style.display = i < count ? '' : 'none';
                 });
                 this.renderCampaignSummary();
+
+                if (count > previousCount) {
+                    const focusTargets = {
+                        name: 'campaign-name',
+                        platform: 'campaign-platform-input',
+                        goal: 'campaign-goal',
+                        budget: 'campaign-budget'
+                    };
+                    const targetId = focusTargets[this.campaignStepOrder[count - 1]];
+                    const el = targetId && document.getElementById(targetId);
+                    if (el) el.focus();
+                }
             }
 
             advanceCampaignStep(fromKey) {
