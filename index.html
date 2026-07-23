@@ -978,8 +978,9 @@
             <h3 class="text-lg font-bold mb-3">Kampagne verlassen</h3>
             <p class="text-sm text-gray-600 mb-4">Was möchtest du mit den bisherigen Eingaben tun?</p>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaignAsDraftAndClose()">Als Entwurf speichern</button>
-                <button class="month-picker-btn month-picker-btn-delete" onclick="app.discardCampaignAndClose()">Löschen</button>
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaignAsDraftAndClose()">Speichern</button>
+                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignWithoutSaving()">Schließen ohne Speichern</button>
+                <button class="month-picker-btn month-picker-btn-delete" onclick="app.discardCampaignAndClose()">Kampagne löschen</button>
                 <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignCloseConfirm()">Zurück zur Kampagne</button>
             </div>
         </div>
@@ -2393,6 +2394,11 @@
 
             closeCampaignCloseConfirm() {
                 document.getElementById('campaign-close-confirm-modal').classList.remove('active');
+            }
+
+            closeCampaignWithoutSaving() {
+                this.closeCampaignCloseConfirm();
+                this.closeCampaignModal();
             }
 
             saveCampaignAsDraftAndClose() {
