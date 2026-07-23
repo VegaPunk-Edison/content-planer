@@ -332,6 +332,17 @@
             color: #d1d5db;
         }
 
+        .date-display-link {
+            color: #3b82f6;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline dotted;
+        }
+
+        .date-display-link:hover {
+            color: #2563eb;
+        }
+
         .date-wheel-picker {
             position: relative;
             display: flex;
@@ -566,14 +577,16 @@
             <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
             <div class="mb-4">
-                <label class="text-xs text-gray-500 block mb-1">Upload-Datum</label>
-                <div class="date-wheel-picker">
-                    <div class="date-wheel" id="wheel-day"></div>
-                    <div class="date-wheel" id="wheel-month"></div>
-                    <div class="date-wheel" id="wheel-year"></div>
-                    <div class="date-wheel-highlight"></div>
+                <p class="text-sm text-gray-500">Upload-Datum: <span id="detail-date-display" class="date-display-link" onclick="app.toggleDateWheel()"></span></p>
+                <div id="date-wheel-section" style="display: none; margin-top: 0.5rem;">
+                    <div class="date-wheel-picker">
+                        <div class="date-wheel" id="wheel-day"></div>
+                        <div class="date-wheel" id="wheel-month"></div>
+                        <div class="date-wheel" id="wheel-year"></div>
+                        <div class="date-wheel-highlight"></div>
+                    </div>
+                    <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.applyWheelDate()">Datum übernehmen</button>
                 </div>
-                <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.applyWheelDate()">Datum übernehmen</button>
             </div>
 
             <div class="font-semibold mb-2">Ressourcen</div>
@@ -990,6 +1003,8 @@
                 document.getElementById('detail-likes').value = this.formatNumber(content.likes || 0);
 
                 const [year, month, day] = this.getDateKey(this.selectedDay).split('-').map(Number);
+                document.getElementById('detail-date-display').textContent = `${day}. ${this.months[month]} ${year}`;
+                document.getElementById('date-wheel-section').style.display = 'none';
                 this.buildDateWheels(day, month, year);
 
                 this.renderResourceList(content);
@@ -1071,6 +1086,11 @@
                     container.scrollTop = index * 32;
                     settle();
                 });
+            }
+
+            toggleDateWheel() {
+                const section = document.getElementById('date-wheel-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
             }
 
             applyWheelDate() {
