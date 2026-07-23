@@ -212,6 +212,18 @@
             color: #2563eb;
         }
 
+        .modal-close-x {
+            cursor: pointer;
+            font-size: 1.25rem;
+            line-height: 1;
+            color: #9ca3af;
+            padding: 0.25rem;
+        }
+
+        .modal-close-x:hover {
+            color: #374151;
+        }
+
         .format-badge {
             background: #eff6ff;
             color: #3b82f6;
@@ -818,7 +830,10 @@
     <!-- KAMPAGNE ERSTELLEN/BEARBEITEN -->
     <div id="campaign-modal" class="month-picker" style="z-index: 110;">
         <div class="month-picker-content" style="max-width: 480px; text-align: left; max-height: 85vh; overflow-y: auto;">
-            <h3 class="text-xl font-bold mb-4">Kampagne</h3>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <h3 class="text-xl font-bold">Kampagne</h3>
+                <span class="modal-close-x" onclick="app.handleCampaignCloseX()">✕</span>
+            </div>
 
             <!-- Schritt: Name -->
             <div id="campaign-step-name" class="campaign-step">
@@ -937,6 +952,19 @@
                     <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignModal()">Abbrechen</button>
                     <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaign()">Speichern</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KAMPAGNE: ABBRECHEN-DIALOG -->
+    <div id="campaign-close-confirm-modal" class="month-picker" style="z-index: 120;">
+        <div class="month-picker-content" style="max-width: 360px; text-align: left;">
+            <h3 class="text-lg font-bold mb-3">Kampagne verlassen</h3>
+            <p class="text-sm text-gray-600 mb-4">Was möchtest du mit den bisherigen Eingaben tun?</p>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaignAsDraftAndClose()">Als Entwurf speichern</button>
+                <button class="month-picker-btn month-picker-btn-delete" onclick="app.discardCampaignAndClose()">Löschen</button>
+                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignCloseConfirm()">Zurück zur Kampagne</button>
             </div>
         </div>
     </div>
@@ -2145,17 +2173,8 @@
                     `).join('');
             }
 
-            saveCampaign() {
+            persistCampaignFromForm() {
                 const name = document.getElementById('campaign-name').value.trim();
-                if (!name) {
-                    alert('Bitte einen Namen für die Kampagne eingeben.');
-                    return;
-                }
-                if (!this.campaignDraftStart) {
-                    alert('Bitte einen Start für die Kampagne festlegen.');
-                    return;
-                }
-
                 const budget = Math.max(0, parseInt(document.getElementById('campaign-budget').value, 10) || 0);
                 const goal = document.getElementById('campaign-goal').value;
                 const platforms = [...this.campaignDraftPlatforms];
@@ -2186,6 +2205,68 @@
                 }
 
                 this.saveCampaigns();
+            }
+
+            saveCampaign() {
+                const name = document.getElementById('campaign-name').value.trim();
+                if (!name) {
+                    alert('Bitte einen Namen für die Kampagne eingeben.');
+                    return;
+                }
+                if (!this.campaignDraftStart) {
+                    alert('Bitte einen Start für die Kampagne festlegen.');
+                    return;
+                }
+
+                this.persistCampaignFromForm();
+                this.closeCampaignModal();
+                this.renderCampaignsTab();
+            }
+
+            hasCampaignDraftContent() {
+                return document.getElementById('campaign-name').value.trim().length > 0
+                    || this.campaignDraftPlatforms.length > 0
+                    || !!this.campaignDraftStart
+                    || !!this.campaignDraftEnd;
+            }
+
+            handleCampaignCloseX() {
+                if (this.editingCampaignId || this.hasCampaignDraftContent()) {
+                    document.getElementById('campaign-close-confirm-modal').classList.add('active');
+                } else {
+                    this.closeCampaignModal();
+                }
+            }
+
+            closeCampaignCloseConfirm() {
+                document.getElementById('campaign-close-confirm-modal').classList.remove('active');
+            }
+
+            saveCampaignAsDraftAndClose() {
+                const name = document.getElementById('campaign-name').value.trim();
+                if (!name) {
+                    alert('Bitte mindestens einen Namen eingeben, um als Entwurf zu speichern.');
+                    return;
+                }
+
+                this.persistCampaignFromForm();
+                this.closeCampaignCloseConfirm();
+                this.closeCampaignModal();
+                this.renderCampaignsTab();
+            }
+
+            discardCampaignAndClose() {
+                if (this.editingCampaignId) {
+                    const campaignId = this.editingCampaignId;
+                    this.campaigns = this.campaigns.filter(c => c.id !== campaignId);
+                    this.getAllContentsFlat().forEach(({ content }) => {
+                        if (content.campaignId === campaignId) content.campaignId = null;
+                    });
+                    this.saveCampaigns();
+                    this.saveContents();
+                }
+
+                this.closeCampaignCloseConfirm();
                 this.closeCampaignModal();
                 this.renderCampaignsTab();
             }
