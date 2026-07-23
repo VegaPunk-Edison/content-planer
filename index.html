@@ -286,6 +286,11 @@
             color: #5b21b6;
         }
 
+        .status-uploaded {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         .status-btn {
             cursor: pointer;
             padding: 0.5rem 1rem;
@@ -306,6 +311,56 @@
 
         .content-card.clickable {
             cursor: pointer;
+        }
+
+        .stat-input {
+            width: 4.5rem;
+            border: none;
+            border-bottom: 1px solid #d1d5db;
+            background: transparent;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #3b82f6;
+            padding: 0.25rem 0;
+        }
+
+        .stat-input:focus {
+            outline: none;
+            border-bottom-color: #3b82f6;
+        }
+
+        .resource-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .resource-item a {
+            color: #3b82f6;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .resource-item a:hover {
+            text-decoration: underline;
+        }
+
+        .resource-remove {
+            cursor: pointer;
+            color: #9ca3af;
+            padding-left: 0.75rem;
+        }
+
+        .resource-remove:hover {
+            color: #ef4444;
         }
 
         .stat-box {
@@ -428,12 +483,32 @@
 
     <!-- CONTENT DETAILANSICHT -->
     <div id="content-detail-modal" class="month-picker">
-        <div class="month-picker-content" style="max-width: 500px; text-align: left;">
-            <h3 id="detail-title" class="text-xl font-bold mb-2"></h3>
-            <p id="detail-meta" class="text-sm text-blue-600 mb-2"></p>
-            <p id="detail-stats" class="text-sm text-gray-500 mb-4"></p>
+        <div class="month-picker-content" style="max-width: 520px; text-align: left; max-height: 85vh; overflow-y: auto;">
+            <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
+            <p id="detail-meta" class="text-sm text-blue-600 mb-4"></p>
+
+            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                <label>
+                    <div class="text-xs text-gray-500 mb-1">👁️ Views</div>
+                    <input type="number" id="detail-views" class="stat-input" min="0">
+                </label>
+                <label>
+                    <div class="text-xs text-gray-500 mb-1">💬 Kommentare</div>
+                    <input type="number" id="detail-comments" class="stat-input" min="0">
+                </label>
+                <label>
+                    <div class="text-xs text-gray-500 mb-1">❤️ Likes</div>
+                    <input type="number" id="detail-likes" class="stat-input" min="0">
+                </label>
+            </div>
+
+            <div class="font-semibold mb-2">Ressourcen</div>
+            <input type="file" id="detail-resource-upload" multiple class="mb-3">
+            <div id="detail-resource-list" class="mb-6"></div>
+
             <div class="font-semibold mb-2">Status</div>
-            <div id="detail-status-buttons" class="mb-6" style="display: flex; gap: 0.5rem;"></div>
+            <div id="detail-status-buttons" class="mb-6" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+
             <div class="month-picker-footer">
                 <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeContentDetail()">Schließen</button>
             </div>
@@ -574,6 +649,15 @@
                     this.addContent();
                 });
                 document.getElementById('content-input').addEventListener('input', (e) => this.handleCommandInput(e));
+
+                ['views', 'comments', 'likes'].forEach(field => {
+                    const input = document.getElementById('detail-' + field);
+                    input.addEventListener('change', () => this.updateContentStat(field));
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') input.blur();
+                    });
+                });
+                document.getElementById('detail-resource-upload').addEventListener('change', (e) => this.handleResourceUpload(e));
             }
 
             openMonthPicker() {
@@ -780,10 +864,15 @@
                                 <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
                             </div>
                             <p class="text-sm text-blue-600 mb-2">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</p>
-                            <p class="text-sm text-gray-500">👁️ ${content.views || 0} Views | 💬 ${content.engagement || 0} Engagement</p>
+                            <p class="text-sm text-gray-500">👁️ ${content.views || 0} · 💬 ${content.comments || 0} · ❤️ ${content.likes || 0}</p>
                         </div>
                     `).join('');
                 }
+            }
+
+            getSelectedContent() {
+                const dateKey = this.getDateKey(this.selectedDay);
+                return (this.contents[dateKey] || []).find(c => c.id === this.selectedContentId);
             }
 
             openContentDetail(id) {
@@ -805,12 +894,17 @@
                 document.getElementById('detail-title').textContent = content.title;
                 document.getElementById('detail-meta').textContent =
                     content.format + (content.platform ? ' · ' + content.platform : '');
-                document.getElementById('detail-stats').textContent =
-                    `👁️ ${content.views || 0} Views | 💬 ${content.engagement || 0} Engagement`;
+
+                document.getElementById('detail-views').value = content.views || 0;
+                document.getElementById('detail-comments').value = content.comments || 0;
+                document.getElementById('detail-likes').value = content.likes || 0;
+
+                this.renderResourceList(content);
 
                 const statuses = [
                     { key: 'draft', label: 'Draft' },
                     { key: 'scheduled', label: 'Scheduled' },
+                    { key: 'uploaded', label: 'Uploaded' },
                     { key: 'live', label: 'Live' },
                     { key: 'erledigt', label: 'Erledigt' }
                 ];
@@ -821,14 +915,86 @@
             }
 
             setContentStatus(status) {
-                const dateKey = this.getDateKey(this.selectedDay);
-                const content = (this.contents[dateKey] || []).find(c => c.id === this.selectedContentId);
+                const content = this.getSelectedContent();
                 if (!content) return;
 
                 content.status = status;
                 this.saveContents();
                 this.renderContentDetail(content);
                 this.loadDashboard();
+            }
+
+            updateContentStat(field) {
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                const input = document.getElementById('detail-' + field);
+                const value = Math.max(0, parseInt(input.value, 10) || 0);
+                content[field] = value;
+                input.value = value;
+                this.saveContents();
+                this.loadDashboard();
+            }
+
+            handleResourceUpload(e) {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const content = this.getSelectedContent();
+                if (!content) return;
+                if (!content.resources) content.resources = [];
+
+                let pending = files.length;
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        content.resources.push({
+                            name: file.name,
+                            dataUrl: reader.result
+                        });
+                        pending--;
+                        if (pending === 0) {
+                            try {
+                                this.saveContents();
+                            } catch (err) {
+                                alert('Datei(en) konnten nicht gespeichert werden (Speicherplatz voll).');
+                            }
+                            this.renderResourceList(content);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                e.target.value = '';
+            }
+
+            renderResourceList(content) {
+                const list = document.getElementById('detail-resource-list');
+                const resources = content.resources || [];
+
+                if (resources.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-sm">Noch keine Dateien hochgeladen</p>';
+                    return;
+                }
+
+                list.innerHTML = resources.map((r, i) => {
+                    const safeName = this.escapeHtml(r.name).replace(/"/g, '&quot;');
+                    return `
+                        <div class="resource-item">
+                            <a href="${r.dataUrl}" download="${safeName}">📎 ${safeName}</a>
+                            <span class="resource-remove" onclick="app.removeResource(${i})">✕</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            removeResource(index) {
+                const content = this.getSelectedContent();
+                if (!content || !content.resources) return;
+
+                content.resources.splice(index, 1);
+                this.saveContents();
+                this.renderResourceList(content);
             }
 
             loadArchive() {
@@ -867,7 +1033,8 @@
                 const contents = this.contents[dateKey] || [];
 
                 const totalViews = contents.reduce((sum, c) => sum + (c.views || 0), 0);
-                const totalEngagement = contents.reduce((sum, c) => sum + (c.engagement || 0), 0);
+                const totalComments = contents.reduce((sum, c) => sum + (c.comments || 0), 0);
+                const totalLikes = contents.reduce((sum, c) => sum + (c.likes || 0), 0);
 
                 const statsContent = document.getElementById('stats-content');
                 statsContent.innerHTML = `
@@ -880,8 +1047,12 @@
                         <div class="stat-label">Contents erstellt</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value">${totalEngagement}</div>
-                        <div class="stat-label">Gesamt Engagements</div>
+                        <div class="stat-value">${totalComments}</div>
+                        <div class="stat-label">Gesamt Kommentare</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">${totalLikes}</div>
+                        <div class="stat-label">Gesamt Likes</div>
                     </div>
                 `;
             }
@@ -907,8 +1078,10 @@
                     format: this.selectedFormat,
                     platform: this.selectedPlatform,
                     status: 'draft',
-                    views: Math.floor(Math.random() * 1000),
-                    engagement: Math.floor(Math.random() * 500)
+                    views: 0,
+                    comments: 0,
+                    likes: 0,
+                    resources: []
                 });
 
                 this.saveContents();
