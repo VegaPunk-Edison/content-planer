@@ -850,7 +850,7 @@
                 <label class="text-xs text-gray-500 block mb-1">Plattform(en)</label>
                 <div id="campaign-platform-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem;"></div>
                 <div style="position: relative; margin-bottom: 0.5rem;">
-                    <input type="text" id="campaign-platform-input" placeholder="/ um Plattform hinzuzufügen" class="detail-date-input" style="width: 100%;">
+                    <input type="text" id="campaign-platform-input" placeholder="Plattform hinzufügen" class="detail-date-input" style="width: 100%;">
                     <div id="campaign-platform-menu" class="command-menu"></div>
                 </div>
                 <button class="month-picker-btn month-picker-btn-confirm" style="padding: 0.5rem;" onclick="app.confirmCampaignPlatforms()">Weiter</button>
@@ -1180,12 +1180,15 @@
                 });
 
                 const campaignPlatformInput = document.getElementById('campaign-platform-input');
+                campaignPlatformInput.addEventListener('focus', () => {
+                    document.getElementById('campaign-platform-menu').classList.add('active');
+                    this.renderCampaignPlatformMenu(campaignPlatformInput.value);
+                });
                 campaignPlatformInput.addEventListener('input', (e) => this.handleCampaignPlatformInput(e));
                 campaignPlatformInput.addEventListener('keypress', (e) => {
                     if (e.key !== 'Enter') return;
-                    if (!campaignPlatformInput.value.startsWith('/')) return;
                     e.preventDefault();
-                    const typed = campaignPlatformInput.value.slice(1).trim();
+                    const typed = campaignPlatformInput.value.trim();
                     if (typed) this.addCampaignPlatform(typed);
                 });
 
@@ -2141,14 +2144,8 @@
             }
 
             handleCampaignPlatformInput(e) {
-                const value = e.target.value;
-                const menu = document.getElementById('campaign-platform-menu');
-                if (value.startsWith('/')) {
-                    menu.classList.add('active');
-                    this.renderCampaignPlatformMenu(value.slice(1));
-                } else {
-                    menu.classList.remove('active');
-                }
+                document.getElementById('campaign-platform-menu').classList.add('active');
+                this.renderCampaignPlatformMenu(e.target.value);
             }
 
             renderCampaignPlatformMenu(filterText) {
