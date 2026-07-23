@@ -307,6 +307,21 @@
             color: #166534;
         }
 
+        .campaign-status-geplant {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .campaign-status-aktiv {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .campaign-status-abgeschlossen {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
         .status-btn {
             cursor: pointer;
             padding: 0.5rem 1rem;
@@ -691,6 +706,13 @@
                 </span>
             </p>
 
+            <p class="text-sm text-gray-500 mb-4">Kampagne:
+                <span style="position: relative; display: inline-block;">
+                    <span id="detail-campaign" class="date-display-link" onclick="app.toggleCampaignEditMenu()"></span>
+                    <div id="detail-campaign-menu" class="command-menu"></div>
+                </span>
+            </p>
+
             <div class="stat-row text-sm text-gray-500 mb-2"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
             <div class="stat-row text-sm text-gray-500 mb-4"><span>💰&nbsp;<input type="text" inputmode="numeric" id="detail-spend" class="stat-input"></span><span class="stat-divider">|</span><span>🎯&nbsp;<input type="text" inputmode="numeric" id="detail-conversions" class="stat-input"></span><span class="stat-divider">|</span><span>💵&nbsp;<input type="text" inputmode="numeric" id="detail-revenue" class="stat-input"></span></div>
@@ -746,6 +768,44 @@
         </div>
     </div>
 
+    <!-- KAMPAGNE ERSTELLEN/BEARBEITEN -->
+    <div id="campaign-modal" class="month-picker" style="z-index: 110;">
+        <div class="month-picker-content" style="max-width: 480px; text-align: left; max-height: 85vh; overflow-y: auto;">
+            <h3 class="text-xl font-bold mb-4">Kampagne</h3>
+
+            <label class="text-xs text-gray-500 block mb-1">Name</label>
+            <input type="text" id="campaign-name" class="detail-date-input mb-3" style="width: 100%;">
+
+            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                <div style="flex: 1;">
+                    <label class="text-xs text-gray-500 block mb-1">Start</label>
+                    <input type="date" id="campaign-start" class="detail-date-input" style="width: 100%;">
+                </div>
+                <div style="flex: 1;">
+                    <label class="text-xs text-gray-500 block mb-1">Ende</label>
+                    <input type="date" id="campaign-end" class="detail-date-input" style="width: 100%;">
+                </div>
+            </div>
+
+            <label class="text-xs text-gray-500 block mb-1">Budget (€)</label>
+            <input type="text" inputmode="numeric" id="campaign-budget" class="detail-date-input mb-3" style="width: 100%;">
+
+            <label class="text-xs text-gray-500 block mb-1">Ziel / Beschreibung</label>
+            <textarea id="campaign-goal" class="detail-date-input mb-3" style="width: 100%; resize: vertical;" rows="3"></textarea>
+
+            <label class="text-xs text-gray-500 block mb-2">Status</label>
+            <div id="campaign-status-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;"></div>
+
+            <div id="campaign-linked-content" class="mb-4"></div>
+
+            <div class="month-picker-footer">
+                <button class="month-picker-btn month-picker-btn-delete" id="campaign-delete-btn" onclick="app.deleteCampaign()" style="display: none;">Löschen</button>
+                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeCampaignModal()">Abbrechen</button>
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.saveCampaign()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
     <!-- KALENDER ANSICHT -->
     <div id="calendar-view" class="max-w-2xl mx-auto">
         <div class="bg-white rounded-lg shadow-lg p-8">
@@ -784,6 +844,7 @@
         <div id="creator-body" class="creator-body">
             <div class="tab-bar">
                 <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
+                <div class="tab" onclick="app.switchTab('campaigns')">Kampagnen</div>
                 <div class="tab" onclick="app.switchTab('stats')">Stats</div>
                 <div class="tab" onclick="app.switchTab('archive')">Archive</div>
             </div>
@@ -819,6 +880,20 @@
 
                     <div id="dashboard-content" class="content-list">
                         <!-- Inhalte werden hier eingefügt -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kampagnen Tab -->
+            <div id="campaigns-tab" class="tab-content">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-bold">Kampagnen</h3>
+                        <button class="month-picker-btn month-picker-btn-confirm" style="flex: none; padding: 0.6rem 1.2rem;" onclick="app.openCampaignModal()">+ Neue Kampagne</button>
+                    </div>
+
+                    <div id="campaigns-list" class="content-list">
+                        <!-- Kampagnen werden hier eingefügt -->
                     </div>
                 </div>
             </div>
@@ -860,7 +935,10 @@
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
                 this.selectedContentId = null;
+                this.editingCampaignId = null;
+                this.campaignStatus = 'geplant';
                 this.contents = this.loadContents();
+                this.campaigns = this.loadCampaigns();
                 this.activeTab = 'dashboard';
                 this.init();
             }
@@ -1021,6 +1099,15 @@
                 localStorage.setItem('calendarContents', JSON.stringify(this.contents));
             }
 
+            loadCampaigns() {
+                const stored = localStorage.getItem('calendarCampaigns');
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            saveCampaigns() {
+                localStorage.setItem('calendarCampaigns', JSON.stringify(this.campaigns));
+            }
+
             getDaysInMonth(date) {
                 return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
             }
@@ -1104,6 +1191,7 @@
                 document.getElementById(tab + '-tab').classList.add('active');
 
                 if (tab === 'dashboard') this.loadDashboard();
+                if (tab === 'campaigns') this.renderCampaignsTab();
                 if (tab === 'stats') this.loadStats();
                 if (tab === 'archive') this.loadArchive();
             }
@@ -1181,6 +1269,10 @@
                 document.getElementById('detail-platform').textContent = content.platform || '– keine Plattform gewählt –';
                 document.getElementById('detail-format-menu').classList.remove('active');
                 document.getElementById('detail-platform-menu').classList.remove('active');
+
+                const linkedCampaign = content.campaignId ? this.campaigns.find(c => c.id === content.campaignId) : null;
+                document.getElementById('detail-campaign').textContent = linkedCampaign ? linkedCampaign.name : '– keine Kampagne –';
+                document.getElementById('detail-campaign-menu').classList.remove('active');
 
                 document.getElementById('detail-views').value = this.formatNumber(content.views || 0);
                 document.getElementById('detail-comments').value = this.formatNumber(content.comments || 0);
@@ -1514,6 +1606,192 @@
                 return items.reduce((sum, i) => sum + (i.content[field] || 0), 0);
             }
 
+            getCampaignContents(campaignId) {
+                return this.getAllContentsFlat().filter(item => item.content.campaignId === campaignId);
+            }
+
+            formatCampaignDate(iso) {
+                if (!iso) return '?';
+                const [y, m, d] = iso.split('-').map(Number);
+                return `${d}. ${this.months[m - 1]} ${y}`;
+            }
+
+            renderCampaignsTab() {
+                const list = document.getElementById('campaigns-list');
+
+                if (this.campaigns.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center py-8">Noch keine Kampagne geplant</p>';
+                    return;
+                }
+
+                list.innerHTML = this.campaigns.map(c => {
+                    const items = this.getCampaignContents(c.id);
+                    const views = this.sumField(items, 'views');
+                    const likes = this.sumField(items, 'likes');
+                    const comments = this.sumField(items, 'comments');
+                    const spend = this.sumField(items, 'spend');
+                    const revenue = this.sumField(items, 'revenue');
+                    const engagementRate = views > 0 ? ((likes + comments) / views) * 100 : 0;
+                    const roas = spend > 0 ? revenue / spend : 0;
+                    const budgetPct = c.budget > 0 ? Math.min(100, Math.round((spend / c.budget) * 100)) : 0;
+
+                    return `
+                        <div class="content-card clickable" onclick="app.openCampaignModal(${c.id})">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-lg">${this.escapeHtml(c.name)}</h4>
+                                <span class="content-status campaign-status-${c.status}">${c.status.toUpperCase()}</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-2">${this.formatCampaignDate(c.startDate)} – ${this.formatCampaignDate(c.endDate)} · ${items.length} Contents</p>
+                            <p class="text-sm text-gray-500">👁️ ${this.formatNumber(views)} | 💬 ${engagementRate.toFixed(1)}% | 💰 ${this.formatNumber(spend)}/${this.formatNumber(c.budget || 0)} € (${budgetPct}%) | 📈 ${roas.toFixed(1)}x</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            openCampaignModal(id) {
+                this.editingCampaignId = id || null;
+                const campaign = id ? this.campaigns.find(c => c.id === id) : null;
+
+                document.getElementById('campaign-name').value = campaign ? campaign.name : '';
+                document.getElementById('campaign-start').value = campaign ? campaign.startDate : '';
+                document.getElementById('campaign-end').value = campaign ? campaign.endDate : '';
+                document.getElementById('campaign-budget').value = campaign ? campaign.budget : 0;
+                document.getElementById('campaign-goal').value = campaign ? campaign.goal : '';
+                document.getElementById('campaign-delete-btn').style.display = campaign ? 'block' : 'none';
+
+                this.campaignStatus = campaign ? campaign.status : 'geplant';
+                this.renderCampaignStatusButtons();
+
+                if (campaign) {
+                    this.renderCampaignLinkedContent(campaign);
+                } else {
+                    document.getElementById('campaign-linked-content').innerHTML = '';
+                }
+
+                document.getElementById('campaign-modal').classList.add('active');
+            }
+
+            closeCampaignModal() {
+                document.getElementById('campaign-modal').classList.remove('active');
+                this.editingCampaignId = null;
+            }
+
+            renderCampaignStatusButtons() {
+                const statuses = [
+                    { key: 'geplant', label: 'Geplant' },
+                    { key: 'aktiv', label: 'Aktiv' },
+                    { key: 'abgeschlossen', label: 'Abgeschlossen' }
+                ];
+                document.getElementById('campaign-status-buttons').innerHTML = statuses.map(s => {
+                    const active = s.key === this.campaignStatus ? 'active' : '';
+                    return `<div class="status-btn campaign-status-${s.key} ${active}" onclick="app.setCampaignStatusDraft('${s.key}')">${s.label.toUpperCase()}</div>`;
+                }).join('');
+            }
+
+            setCampaignStatusDraft(status) {
+                this.campaignStatus = status;
+                this.renderCampaignStatusButtons();
+            }
+
+            renderCampaignLinkedContent(campaign) {
+                const items = this.getCampaignContents(campaign.id);
+                const container = document.getElementById('campaign-linked-content');
+
+                if (items.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-sm">Noch keine Contents verknüpft. Weise sie in der Content-Detailansicht dieser Kampagne zu.</p>';
+                    return;
+                }
+
+                container.innerHTML = `<div class="text-xs text-gray-500 mb-2">${items.length} verknüpfte Contents</div>` +
+                    items.map(({ content, day, month, year }) => `
+                        <div class="doc-item">
+                            <div class="font-semibold">${this.escapeHtml(content.title)}</div>
+                            <div class="text-gray-600 text-sm mt-1">${day}. ${this.months[month]} ${year} · ${content.format}</div>
+                        </div>
+                    `).join('');
+            }
+
+            saveCampaign() {
+                const name = document.getElementById('campaign-name').value.trim();
+                if (!name) {
+                    alert('Bitte einen Namen für die Kampagne eingeben.');
+                    return;
+                }
+
+                const startDate = document.getElementById('campaign-start').value;
+                const endDate = document.getElementById('campaign-end').value;
+                const budget = Math.max(0, parseInt(document.getElementById('campaign-budget').value, 10) || 0);
+                const goal = document.getElementById('campaign-goal').value.trim();
+
+                if (this.editingCampaignId) {
+                    const campaign = this.campaigns.find(c => c.id === this.editingCampaignId);
+                    if (campaign) {
+                        campaign.name = name;
+                        campaign.startDate = startDate;
+                        campaign.endDate = endDate;
+                        campaign.budget = budget;
+                        campaign.goal = goal;
+                        campaign.status = this.campaignStatus;
+                    }
+                } else {
+                    this.campaigns.push({
+                        id: Date.now(),
+                        name,
+                        startDate,
+                        endDate,
+                        budget,
+                        goal,
+                        status: this.campaignStatus
+                    });
+                }
+
+                this.saveCampaigns();
+                this.closeCampaignModal();
+                this.renderCampaignsTab();
+            }
+
+            deleteCampaign() {
+                if (!this.editingCampaignId) return;
+                if (!confirm('Diese Kampagne wirklich löschen? Verknüpfte Contents bleiben erhalten, verlieren aber die Zuordnung.')) return;
+
+                const campaignId = this.editingCampaignId;
+                this.campaigns = this.campaigns.filter(c => c.id !== campaignId);
+                this.getAllContentsFlat().forEach(({ content }) => {
+                    if (content.campaignId === campaignId) content.campaignId = null;
+                });
+
+                this.saveCampaigns();
+                this.saveContents();
+                this.closeCampaignModal();
+                this.renderCampaignsTab();
+            }
+
+            toggleCampaignEditMenu() {
+                const menu = document.getElementById('detail-campaign-menu');
+                const willOpen = !menu.classList.contains('active');
+                if (willOpen) this.renderCampaignEditMenu();
+                menu.classList.toggle('active');
+            }
+
+            renderCampaignEditMenu() {
+                const menu = document.getElementById('detail-campaign-menu');
+                const items = ['<div class="command-menu-item" onclick="app.setContentCampaign(null)">– Keine Kampagne –</div>']
+                    .concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.setContentCampaign(${c.id})">${this.escapeHtml(c.name)}</div>`));
+                menu.innerHTML = items.join('');
+            }
+
+            setContentCampaign(campaignId) {
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                content.campaignId = campaignId;
+                this.saveContents();
+
+                const campaign = campaignId ? this.campaigns.find(c => c.id === campaignId) : null;
+                document.getElementById('detail-campaign').textContent = campaign ? campaign.name : '– keine Kampagne –';
+                document.getElementById('detail-campaign-menu').classList.remove('active');
+            }
+
             computeMetricForGroup(items, metric) {
                 const views = this.sumField(items, 'views');
                 const engagements = this.sumField(items, 'likes') + this.sumField(items, 'comments');
@@ -1697,7 +1975,8 @@
                     spend: 0,
                     conversions: 0,
                     revenue: 0,
-                    resources: []
+                    resources: [],
+                    campaignId: null
                 });
 
                 this.saveContents();
