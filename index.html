@@ -2003,11 +2003,13 @@
                 document.getElementById('campaign-platform-menu').classList.remove('active');
                 this.renderCampaignPlatformChips();
                 input.focus();
+                this.advanceCampaignStep('platform');
             }
 
             removeCampaignPlatform(platform) {
                 this.campaignDraftPlatforms = this.campaignDraftPlatforms.filter(p => p !== platform);
                 this.renderCampaignPlatformChips();
+                this.renderCampaignSummary();
             }
 
             handleCampaignPlatformInput(e) {
