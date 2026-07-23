@@ -640,6 +640,17 @@
             color: #3b82f6;
         }
 
+        .editable-summary-value {
+            cursor: pointer;
+            text-decoration: underline dotted;
+            text-decoration-color: transparent;
+            transition: text-decoration-color 0.2s;
+        }
+
+        .editable-summary-value:hover {
+            text-decoration-color: #3b82f6;
+        }
+
         .content-list {
             display: flex;
             flex-direction: column;
@@ -1121,6 +1132,8 @@
                 this.campaignStatus = 'geplant';
                 this.campaignStepOrder = ['name', 'platform', 'goal', 'start', 'end', 'budget', 'status', 'resources', 'summary'];
                 this.campaignVisibleSteps = 1;
+                this.campaignInlineEditMode = false;
+                this.campaignIsolatedField = null;
                 this.contents = this.loadContents();
                 this.campaigns = this.loadCampaigns();
                 this.activeTab = 'dashboard';
@@ -1981,8 +1994,16 @@
                     document.getElementById('campaign-linked-content').innerHTML = '';
                 }
 
-                this.campaignVisibleSteps = 0;
-                this.showCampaignStepsUpTo(campaign ? this.campaignStepOrder.length : 1);
+                this.campaignInlineEditMode = !!campaign;
+                this.campaignIsolatedField = null;
+
+                if (campaign) {
+                    this.campaignVisibleSteps = this.campaignStepOrder.length;
+                    this.showOnlyCampaignSummary();
+                } else {
+                    this.campaignVisibleSteps = 0;
+                    this.showCampaignStepsUpTo(1);
+                }
 
                 document.getElementById('campaign-modal').classList.add('active');
             }
@@ -2009,7 +2030,43 @@
                 }
             }
 
+            showOnlyCampaignSummary() {
+                this.campaignStepOrder.forEach(key => {
+                    const el = document.getElementById('campaign-step-' + key);
+                    if (el) el.style.display = key === 'summary' ? '' : 'none';
+                });
+                this.renderCampaignSummary();
+            }
+
+            editCampaignField(key) {
+                this.campaignIsolatedField = key;
+                this.campaignStepOrder.forEach(k => {
+                    const el = document.getElementById('campaign-step-' + k);
+                    if (el) el.style.display = k === key ? '' : 'none';
+                });
+
+                const focusTargets = {
+                    name: 'campaign-name',
+                    platform: 'campaign-platform-input',
+                    goal: 'campaign-goal',
+                    budget: 'campaign-budget'
+                };
+                const targetId = focusTargets[key];
+                const el = targetId && document.getElementById(targetId);
+                if (el) el.focus();
+            }
+
             advanceCampaignStep(fromKey) {
+                if (this.campaignIsolatedField) {
+                    this.campaignIsolatedField = null;
+                    if (this.campaignInlineEditMode) {
+                        this.showOnlyCampaignSummary();
+                    } else {
+                        this.showCampaignStepsUpTo(this.campaignVisibleSteps);
+                    }
+                    return;
+                }
+
                 const idx = this.campaignStepOrder.indexOf(fromKey);
                 if (idx === -1) return;
                 if (this.campaignVisibleSteps < idx + 2) {
@@ -2062,21 +2119,23 @@
                     nextSteps: 'Next Steps', vertraege: 'Verträge & Rechtliches'
                 };
                 const target = this.getCampaignResourceTarget();
+                const row = (label, value, key) =>
+                    `<div class="drilldown-row"><span>${label}</span><span class="drilldown-row-value editable-summary-value" onclick="app.editCampaignField('${key}')">${value}</span></div>`;
+
                 const resourcesHtml = Object.keys(resourceLabels).map(cat => {
                     const count = (target.resources && target.resources[cat]) ? target.resources[cat].length : 0;
-                    return `<div class="drilldown-row"><span>${resourceLabels[cat]}</span><span class="drilldown-row-value">${count} Datei(en)</span></div>`;
+                    return row(resourceLabels[cat], `${count} Datei(en)`, 'resources');
                 }).join('');
 
-                summaryEl.innerHTML = `
-                    <div class="drilldown-row"><span>Name</span><span class="drilldown-row-value">${this.escapeHtml(document.getElementById('campaign-name').value)}</span></div>
-                    <div class="drilldown-row"><span>Plattform(en)</span><span class="drilldown-row-value">${this.escapeHtml(platforms)}</span></div>
-                    <div class="drilldown-row"><span>Ziel</span><span class="drilldown-row-value">${goalLabels[goalValue] || '– keine Auswahl –'}</span></div>
-                    <div class="drilldown-row"><span>Start</span><span class="drilldown-row-value">${this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : '– offen –'}</span></div>
-                    <div class="drilldown-row"><span>Ende</span><span class="drilldown-row-value">${this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : '– offen –'}</span></div>
-                    <div class="drilldown-row"><span>Budget</span><span class="drilldown-row-value">${budget} €</span></div>
-                    <div class="drilldown-row"><span>Status</span><span class="drilldown-row-value">${this.campaignStatus.toUpperCase()}</span></div>
-                    ${resourcesHtml}
-                `;
+                summaryEl.innerHTML =
+                    row('Name', this.escapeHtml(document.getElementById('campaign-name').value), 'name') +
+                    row('Plattform(en)', this.escapeHtml(platforms), 'platform') +
+                    row('Ziel', goalLabels[goalValue] || '– keine Auswahl –', 'goal') +
+                    row('Start', this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : '– offen –', 'start') +
+                    row('Ende', this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : '– offen –', 'end') +
+                    row('Budget', `${budget} €`, 'budget') +
+                    row('Status', this.campaignStatus.toUpperCase(), 'status') +
+                    resourcesHtml;
             }
 
             buildCampaignWheel(prefix, day, month, year) {
