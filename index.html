@@ -467,15 +467,16 @@
 
                     <!-- Content Input -->
                     <div class="todo-input-wrapper mb-6">
+                        <div id="platform-indicator" class="format-badge" style="display: none; cursor: default;"></div>
                         <input
                             type="text"
                             id="content-input"
-                            placeholder="Neuen Content planen..."
+                            placeholder="Neuen Content planen... ( ' = Format, / = Plattform)"
                             autocomplete="off"
                         >
                         <button id="add-content-btn" class="add-btn">+</button>
 
-                        <!-- Command Menu -->
+                        <!-- Command Menu: Format -->
                         <div id="command-menu" class="command-menu">
                             <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
                             <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
@@ -484,6 +485,9 @@
                             <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
                             <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
                         </div>
+
+                        <!-- Command Menu: Plattform -->
+                        <div id="platform-menu" class="command-menu"></div>
                     </div>
 
                     <div id="dashboard-content" class="content-list">
@@ -524,8 +528,10 @@
                 this.months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
                               'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
                 this.dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+                this.platforms = ['Skool', 'YouTube', 'Instagram', 'TikTok', 'Snapchat', 'LinkedIn', 'Facebook'];
                 this.selectedDay = null;
                 this.selectedFormat = null;
+                this.selectedPlatform = null;
                 this.contents = this.loadContents();
                 this.activeTab = 'dashboard';
                 this.init();
@@ -536,7 +542,15 @@
                 document.getElementById('close-creator').addEventListener('click', () => this.closeCreator());
                 document.getElementById('add-content-btn').addEventListener('click', () => this.addContent());
                 document.getElementById('content-input').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.addContent();
+                    if (e.key !== 'Enter') return;
+                    const input = e.target;
+                    if (input.value.startsWith('/')) {
+                        e.preventDefault();
+                        const typed = input.value.slice(1).trim();
+                        if (typed) this.selectPlatform(typed);
+                        return;
+                    }
+                    this.addContent();
                 });
                 document.getElementById('content-input').addEventListener('input', (e) => this.handleCommandInput(e));
             }
@@ -572,14 +586,32 @@
 
             handleCommandInput(e) {
                 const value = e.target.value;
-                const menu = document.getElementById('command-menu');
+                const formatMenu = document.getElementById('command-menu');
+                const platformMenu = document.getElementById('platform-menu');
 
-                if (value.startsWith('/') || value.startsWith("'")) {
-                    menu.classList.add('active');
+                if (value.startsWith("'")) {
+                    formatMenu.classList.add('active');
+                    platformMenu.classList.remove('active');
+                } else if (value.startsWith('/')) {
+                    platformMenu.classList.add('active');
+                    formatMenu.classList.remove('active');
+                    this.renderPlatformMenu(value.slice(1));
                 } else {
-                    menu.classList.remove('active');
-                    this.selectedFormat = null;
+                    formatMenu.classList.remove('active');
+                    platformMenu.classList.remove('active');
                 }
+            }
+
+            renderPlatformMenu(filterText) {
+                const menu = document.getElementById('platform-menu');
+                const filtered = this.platforms.filter(p => p.toLowerCase().includes(filterText.trim().toLowerCase()));
+
+                if (filtered.length === 0) {
+                    menu.innerHTML = '<div class="command-menu-item text-gray-400">Enter drücken zum Übernehmen</div>';
+                    return;
+                }
+
+                menu.innerHTML = filtered.map(p => `<div class="command-menu-item" onclick="app.selectPlatform('${p}')">${p}</div>`).join('');
             }
 
             selectFormat(format) {
@@ -591,6 +623,25 @@
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = format;
                 document.getElementById('creator-body').style.display = '';
+            }
+
+            selectPlatform(platform) {
+                this.selectedPlatform = platform;
+                const input = document.getElementById('content-input');
+                input.value = '';
+                input.focus();
+                document.getElementById('platform-menu').classList.remove('active');
+                this.updatePlatformIndicator();
+            }
+
+            updatePlatformIndicator() {
+                const indicator = document.getElementById('platform-indicator');
+                if (this.selectedPlatform) {
+                    indicator.textContent = this.selectedPlatform;
+                    indicator.style.display = 'inline-block';
+                } else {
+                    indicator.style.display = 'none';
+                }
             }
 
             toggleFormatMenu() {
@@ -649,6 +700,8 @@
                 document.body.classList.add('modal-open');
                 document.getElementById('content-input').focus();
                 this.selectedFormat = null;
+                this.selectedPlatform = null;
+                this.updatePlatformIndicator();
 
                 const dateKey = this.getDateKey(this.selectedDay);
                 const hasContent = (this.contents[dateKey] || []).length > 0;
@@ -663,8 +716,11 @@
                 document.getElementById('content-input').value = '';
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('format-badge-menu').classList.remove('active');
+                document.getElementById('platform-menu').classList.remove('active');
                 this.selectedDay = null;
                 this.selectedFormat = null;
+                this.selectedPlatform = null;
+                this.updatePlatformIndicator();
                 this.activeTab = 'dashboard';
             }
 
@@ -701,7 +757,7 @@
                                 <h4 class="font-bold text-lg">${this.escapeHtml(content.title)}</h4>
                                 <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
                             </div>
-                            <p class="text-sm text-blue-600 mb-2">${content.format}</p>
+                            <p class="text-sm text-blue-600 mb-2">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</p>
                             <p class="text-sm text-gray-500">👁️ ${content.views || 0} Views | 💬 ${content.engagement || 0} Engagement</p>
                         </div>
                     `).join('');
@@ -722,7 +778,7 @@
                         docsHtml += `
                             <div class="doc-item">
                                 <div class="font-semibold">${this.escapeHtml(content.title)}</div>
-                                <div class="text-gray-600 text-sm mt-1">${content.format}</div>
+                                <div class="text-gray-600 text-sm mt-1">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</div>
                             </div>
                         `;
                     });
@@ -760,7 +816,7 @@
 
                 if (!text) return;
                 if (!this.selectedFormat) {
-                    alert('Bitte wähle erst ein Format mit / oder \'');
+                    alert("Bitte wähle erst ein Format mit '");
                     return;
                 }
 
@@ -773,6 +829,7 @@
                     id: Date.now(),
                     title: text,
                     format: this.selectedFormat,
+                    platform: this.selectedPlatform,
                     status: 'draft',
                     views: Math.floor(Math.random() * 1000),
                     engagement: Math.floor(Math.random() * 500)
@@ -781,7 +838,10 @@
                 this.saveContents();
                 input.value = '';
                 this.selectedFormat = null;
+                this.selectedPlatform = null;
+                this.updatePlatformIndicator();
                 document.getElementById('command-menu').classList.remove('active');
+                document.getElementById('platform-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = 'Format auswählen';
                 this.loadDashboard();
             }
