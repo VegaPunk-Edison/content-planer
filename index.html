@@ -424,6 +424,19 @@
             border-bottom-color: #3b82f6;
         }
 
+        .resource-category {
+            margin-bottom: 1rem;
+        }
+
+        .resource-category-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #9ca3af;
+            margin-bottom: 0.375rem;
+        }
+
         .resource-item {
             display: flex;
             align-items: center;
@@ -598,9 +611,9 @@
                 </div>
             </div>
 
-            <div class="font-semibold mb-2">Ressourcen</div>
-            <input type="file" id="detail-resource-upload" multiple class="mb-3">
-            <div id="detail-resource-list" class="mb-6"></div>
+            <div class="mb-4">
+                <p class="text-sm text-gray-500">Ressourcen: <span id="detail-resource-summary" class="date-display-link" onclick="app.openResourceDetail()"></span></p>
+            </div>
 
             <div class="font-semibold mb-2">Status</div>
             <div id="detail-status-buttons" class="mb-6" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
@@ -608,6 +621,18 @@
             <div class="month-picker-footer">
                 <button class="month-picker-btn month-picker-btn-delete" onclick="app.deleteContent()">Löschen</button>
                 <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeContentDetail()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESSOURCEN DETAILANSICHT -->
+    <div id="resource-detail-modal" class="month-picker" style="z-index: 110;">
+        <div class="month-picker-content" style="max-width: 480px; text-align: left; max-height: 85vh; overflow-y: auto;">
+            <h3 class="text-xl font-bold mb-4">Ressourcen</h3>
+            <input type="file" id="detail-resource-upload" multiple class="mb-4">
+            <div id="detail-resource-list"></div>
+            <div class="month-picker-footer" style="margin-top: 1.5rem;">
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeResourceDetail()">Schließen</button>
             </div>
         </div>
     </div>
@@ -1000,7 +1025,19 @@
 
             closeContentDetail() {
                 document.getElementById('content-detail-modal').classList.remove('active');
+                this.closeResourceDetail();
                 this.selectedContentId = null;
+            }
+
+            openResourceDetail() {
+                const content = this.getSelectedContent();
+                if (!content) return;
+                this.renderResourceList(content);
+                document.getElementById('resource-detail-modal').classList.add('active');
+            }
+
+            closeResourceDetail() {
+                document.getElementById('resource-detail-modal').classList.remove('active');
             }
 
             deleteContent() {
@@ -1184,6 +1221,7 @@
                     reader.onload = () => {
                         content.resources.push({
                             name: file.name,
+                            type: file.type,
                             dataUrl: reader.result
                         });
                         pending--;
@@ -1202,24 +1240,52 @@
                 e.target.value = '';
             }
 
+            getResourceCategory(resource) {
+                const type = (resource.type || '').toLowerCase();
+                const name = (resource.name || '').toLowerCase();
+
+                if (type.startsWith('image/')) return 'Bilder';
+                if (type.startsWith('video/')) return 'Videos';
+                if (type === 'application/pdf' || /\.(pdf|docx?|txt|rtf|odt)$/.test(name)) return 'Dokumente';
+                return 'Sonstiges';
+            }
+
             renderResourceList(content) {
-                const list = document.getElementById('detail-resource-list');
                 const resources = content.resources || [];
 
+                const summary = document.getElementById('detail-resource-summary');
+                summary.textContent = resources.length === 0
+                    ? 'Keine Dateien'
+                    : `${resources.length} ${resources.length === 1 ? 'Datei' : 'Dateien'}`;
+
+                const list = document.getElementById('detail-resource-list');
                 if (resources.length === 0) {
                     list.innerHTML = '<p class="text-gray-400 text-sm">Noch keine Dateien hochgeladen</p>';
                     return;
                 }
 
-                list.innerHTML = resources.map((r, i) => {
-                    const safeName = this.escapeHtml(r.name).replace(/"/g, '&quot;');
-                    return `
-                        <div class="resource-item">
-                            <a href="${r.dataUrl}" download="${safeName}">📎 ${safeName}</a>
-                            <span class="resource-remove" onclick="app.removeResource(${i})">✕</span>
-                        </div>
-                    `;
-                }).join('');
+                const categoryOrder = ['Bilder', 'Videos', 'Dokumente', 'Sonstiges'];
+                const grouped = {};
+                resources.forEach((r, i) => {
+                    const category = this.getResourceCategory(r);
+                    if (!grouped[category]) grouped[category] = [];
+                    grouped[category].push({ ...r, index: i });
+                });
+
+                list.innerHTML = categoryOrder
+                    .filter(category => grouped[category] && grouped[category].length > 0)
+                    .map(category => {
+                        const items = grouped[category].map(r => {
+                            const safeName = this.escapeHtml(r.name).replace(/"/g, '&quot;');
+                            return `
+                                <div class="resource-item">
+                                    <a href="${r.dataUrl}" download="${safeName}">📎 ${safeName}</a>
+                                    <span class="resource-remove" onclick="app.removeResource(${r.index})">✕</span>
+                                </div>
+                            `;
+                        }).join('');
+                        return `<div class="resource-category"><div class="resource-category-title">${category}</div>${items}</div>`;
+                    }).join('');
             }
 
             removeResource(index) {
