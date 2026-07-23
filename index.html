@@ -991,7 +991,16 @@
                     </svg>
                 </button>
                 <div>
-                    <h2 id="creator-date" class="text-xl font-bold"></h2>
+                    <h2 id="creator-date" class="text-xl font-bold date-display-link" onclick="app.toggleCreatorDateWheel()"></h2>
+                    <div id="creator-date-wheel-section" style="display: none; margin-top: 0.5rem;">
+                        <div class="date-wheel-picker">
+                            <div class="date-wheel" id="wheel-jump-day"></div>
+                            <div class="date-wheel" id="wheel-jump-month"></div>
+                            <div class="date-wheel" id="wheel-jump-year"></div>
+                            <div class="date-wheel-highlight"></div>
+                        </div>
+                        <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.confirmCreatorDateJump()">Datum übernehmen</button>
+                    </div>
                     <div id="dashboard-header-actions">
                         <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
                             <div id="format-badge" class="format-badge" onclick="app.toggleFormatMenu()"></div>
@@ -1152,6 +1161,10 @@
                 this.wireWheelScroll('wheel-month', v => { this.wheelMonth = v; });
                 this.wireWheelScroll('wheel-year', v => { this.wheelYear = v; });
 
+                this.wireWheelScroll('wheel-jump-day', v => { this.jumpWheel.day = v; });
+                this.wireWheelScroll('wheel-jump-month', v => { this.jumpWheel.month = v; });
+                this.wireWheelScroll('wheel-jump-year', v => { this.jumpWheel.year = v; });
+
                 const titleInput = document.getElementById('detail-title-input');
                 titleInput.addEventListener('blur', () => this.updateContentTitle());
                 titleInput.addEventListener('keypress', (e) => {
@@ -1311,8 +1324,10 @@
 
             renderCampaignCreateMenu() {
                 const menu = document.getElementById('campaign-badge-menu');
-                const items = ['<div class="command-menu-item" onclick="app.selectCampaignForCreate(null)">– Keine Kampagne –</div>']
-                    .concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.selectCampaignForCreate(${c.id})">${this.escapeHtml(c.name)}</div>`));
+                const items = [
+                    '<div class="command-menu-item" onclick="app.openCampaignModal()">+ Neue Kampagne</div>',
+                    '<div class="command-menu-item" onclick="app.selectCampaignForCreate(null)">– Keine Kampagne –</div>'
+                ].concat(this.campaigns.map(c => `<div class="command-menu-item" onclick="app.selectCampaignForCreate(${c.id})">${this.escapeHtml(c.name)}</div>`));
                 menu.innerHTML = items.join('');
             }
 
@@ -1383,6 +1398,7 @@
                 document.getElementById('campaign-badge-menu').classList.remove('active');
                 document.getElementById('dashboard-header-actions').style.display = '';
                 document.getElementById('campaign-start-header-badge').style.display = 'none';
+                document.getElementById('creator-date-wheel-section').style.display = 'none';
 
                 document.getElementById('content-creator-view').classList.add('active');
                 document.body.classList.add('modal-open');
@@ -1595,6 +1611,28 @@
                 document.getElementById('detail-platform-custom').value = '';
                 this.loadDashboard();
                 this.render();
+            }
+
+            toggleCreatorDateWheel() {
+                const section = document.getElementById('creator-date-wheel-section');
+                const willOpen = section.style.display === 'none';
+                if (willOpen) {
+                    this.jumpWheel = { day: this.selectedDay, month: this.currentDate.getMonth(), year: this.currentDate.getFullYear() };
+                    this.renderWheel('wheel-jump-day', Array.from({ length: 31 }, (_, i) => i + 1), this.jumpWheel.day, v => v);
+                    this.renderWheel('wheel-jump-month', this.months.map((_, i) => i), this.jumpWheel.month, v => this.months[v]);
+                    this.renderWheel('wheel-jump-year', Array.from({ length: 6 }, (_, i) => this.jumpWheel.year - 2 + i), this.jumpWheel.year, v => v);
+                }
+                section.style.display = willOpen ? 'block' : 'none';
+            }
+
+            confirmCreatorDateJump() {
+                const w = this.jumpWheel;
+                const daysInTargetMonth = new Date(w.year, w.month + 1, 0).getDate();
+                this.currentDate = new Date(w.year, w.month, 1);
+                this.selectedDay = Math.min(w.day, daysInTargetMonth);
+                document.getElementById('creator-date-wheel-section').style.display = 'none';
+                this.render();
+                this.openCreator();
             }
 
             buildDateWheels(day, month, year) {
