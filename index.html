@@ -348,6 +348,26 @@
             text-decoration: underline dotted;
         }
 
+        .detail-title-input {
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: none;
+            border-bottom: 1px dashed transparent;
+            background: transparent;
+            width: 100%;
+            padding: 0.125rem 0;
+            color: #111827;
+        }
+
+        .detail-title-input:hover {
+            border-bottom-color: #d1d5db;
+        }
+
+        .detail-title-input:focus {
+            outline: none;
+            border-bottom-color: #3b82f6;
+        }
+
         .date-display-link:hover {
             color: #2563eb;
         }
@@ -592,9 +612,39 @@
     <!-- CONTENT DETAILANSICHT -->
     <div id="content-detail-modal" class="month-picker">
         <div class="month-picker-content" style="max-width: 520px; text-align: left; max-height: 85vh; overflow-y: auto;">
-            <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
-            <p class="text-sm text-gray-500 mb-1">Format: <span id="detail-format" class="text-blue-600 font-medium"></span></p>
-            <p class="text-sm text-gray-500 mb-4">Plattform: <span id="detail-platform" class="text-blue-600 font-medium"></span></p>
+            <input type="text" id="detail-title-input" class="detail-title-input mb-1">
+
+            <p class="text-sm text-gray-500 mb-1">Format:
+                <span style="position: relative; display: inline-block;">
+                    <span id="detail-format" class="date-display-link" onclick="app.toggleFormatEditMenu()"></span>
+                    <div id="detail-format-menu" class="command-menu">
+                        <div class="command-menu-item" onclick="app.setContentFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
+                        <div class="command-menu-item" onclick="app.setContentFormat('📱 Short-form')">📱 Short-form</div>
+                        <div class="command-menu-item" onclick="app.setContentFormat('📹 Mid-form')">📹 Mid-form</div>
+                        <div class="command-menu-item" onclick="app.setContentFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
+                        <div class="command-menu-item" onclick="app.setContentFormat('📄 Long Form')">📄 Long Form</div>
+                        <div class="command-menu-item" onclick="app.setContentFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                    </div>
+                </span>
+            </p>
+
+            <p class="text-sm text-gray-500 mb-4">Plattform:
+                <span style="position: relative; display: inline-block;">
+                    <span id="detail-platform" class="date-display-link" onclick="app.togglePlatformEditMenu()"></span>
+                    <div id="detail-platform-menu" class="command-menu">
+                        <div class="command-menu-item" onclick="app.setContentPlatform('Skool')">Skool</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('YouTube')">YouTube</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('Instagram')">Instagram</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('TikTok')">TikTok</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('Snapchat')">Snapchat</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('LinkedIn')">LinkedIn</div>
+                        <div class="command-menu-item" onclick="app.setContentPlatform('Facebook')">Facebook</div>
+                        <div style="padding: 0.5rem 1rem;">
+                            <input type="text" id="detail-platform-custom" placeholder="Eigene + Enter" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        </div>
+                    </div>
+                </span>
+            </p>
 
             <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
@@ -790,6 +840,19 @@
                 this.wireWheelScroll('wheel-day', v => { this.wheelDay = v; });
                 this.wireWheelScroll('wheel-month', v => { this.wheelMonth = v; });
                 this.wireWheelScroll('wheel-year', v => { this.wheelYear = v; });
+
+                const titleInput = document.getElementById('detail-title-input');
+                titleInput.addEventListener('blur', () => this.updateContentTitle());
+                titleInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') titleInput.blur();
+                });
+
+                const platformCustomInput = document.getElementById('detail-platform-custom');
+                platformCustomInput.addEventListener('keypress', (e) => {
+                    if (e.key !== 'Enter') return;
+                    const value = platformCustomInput.value.trim();
+                    if (value) this.setContentPlatform(value);
+                });
             }
 
             openMonthPicker() {
@@ -1054,9 +1117,11 @@
             }
 
             renderContentDetail(content) {
-                document.getElementById('detail-title').textContent = content.title;
+                document.getElementById('detail-title-input').value = content.title;
                 document.getElementById('detail-format').textContent = content.format;
                 document.getElementById('detail-platform').textContent = content.platform || '– keine Plattform gewählt –';
+                document.getElementById('detail-format-menu').classList.remove('active');
+                document.getElementById('detail-platform-menu').classList.remove('active');
 
                 document.getElementById('detail-views').value = this.formatNumber(content.views || 0);
                 document.getElementById('detail-comments').value = this.formatNumber(content.comments || 0);
@@ -1087,6 +1152,50 @@
                 content.status = status;
                 this.saveContents();
                 this.renderContentDetail(content);
+                this.loadDashboard();
+                this.render();
+            }
+
+            updateContentTitle() {
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                const input = document.getElementById('detail-title-input');
+                const value = input.value.trim();
+                content.title = value || content.title;
+                input.value = content.title;
+                this.saveContents();
+                this.loadDashboard();
+            }
+
+            toggleFormatEditMenu() {
+                document.getElementById('detail-format-menu').classList.toggle('active');
+            }
+
+            togglePlatformEditMenu() {
+                document.getElementById('detail-platform-menu').classList.toggle('active');
+            }
+
+            setContentFormat(format) {
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                content.format = format;
+                this.saveContents();
+                document.getElementById('detail-format').textContent = format;
+                document.getElementById('detail-format-menu').classList.remove('active');
+                this.loadDashboard();
+            }
+
+            setContentPlatform(platform) {
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                content.platform = platform;
+                this.saveContents();
+                document.getElementById('detail-platform').textContent = platform;
+                document.getElementById('detail-platform-menu').classList.remove('active');
+                document.getElementById('detail-platform-custom').value = '';
                 this.loadDashboard();
                 this.render();
             }
@@ -1446,7 +1555,7 @@
                     'LinkedIn': '#004182',
                     'YouTube': '#ff0000',
                     'TikTok': '#ec407a',
-                    'Instagram': 'linear-gradient(45deg, #833ab4, #c13584, #e1306c)',
+                    'Instagram': 'conic-gradient(from 135deg, #833ab4 0deg 180deg, #e1306c 180deg 360deg)',
                     'Snapchat': '#fffc00',
                     'Skool': 'linear-gradient(45deg, #ef4444, #2563eb)'
                 };
