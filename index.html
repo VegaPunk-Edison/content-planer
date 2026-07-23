@@ -560,7 +560,8 @@
     <div id="content-detail-modal" class="month-picker">
         <div class="month-picker-content" style="max-width: 520px; text-align: left; max-height: 85vh; overflow-y: auto;">
             <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
-            <p id="detail-meta" class="text-sm text-blue-600 mb-4"></p>
+            <p class="text-sm text-gray-500 mb-1">Format: <span id="detail-format" class="text-blue-600 font-medium"></span></p>
+            <p class="text-sm text-gray-500 mb-4">Plattform: <span id="detail-platform" class="text-blue-600 font-medium"></span></p>
 
             <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
@@ -981,8 +982,8 @@
 
             renderContentDetail(content) {
                 document.getElementById('detail-title').textContent = content.title;
-                document.getElementById('detail-meta').textContent =
-                    content.format + (content.platform ? ' · ' + content.platform : '');
+                document.getElementById('detail-format').textContent = content.format;
+                document.getElementById('detail-platform').textContent = content.platform || '– keine Plattform gewählt –';
 
                 document.getElementById('detail-views').value = this.formatNumber(content.views || 0);
                 document.getElementById('detail-comments').value = this.formatNumber(content.comments || 0);
