@@ -322,6 +322,53 @@
             color: #1e40af;
         }
 
+        .platform-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .platform-chip-remove {
+            cursor: pointer;
+            color: #93c5fd;
+        }
+
+        .platform-chip-remove:hover {
+            color: #ef4444;
+        }
+
+        .campaign-resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .campaign-resource-slot {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+        }
+
+        .campaign-resource-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .campaign-resource-upload {
+            width: 100%;
+            font-size: 0.7rem;
+        }
+
         .status-btn {
             cursor: pointer;
             padding: 0.5rem 1rem;
@@ -776,25 +823,84 @@
             <label class="text-xs text-gray-500 block mb-1">Name</label>
             <input type="text" id="campaign-name" class="detail-date-input mb-3" style="width: 100%;">
 
-            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                <div style="flex: 1;">
-                    <label class="text-xs text-gray-500 block mb-1">Start</label>
-                    <input type="date" id="campaign-start" class="detail-date-input" style="width: 100%;">
+            <label class="text-xs text-gray-500 block mb-1">Plattform(en)</label>
+            <div id="campaign-platform-chips" style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem;"></div>
+            <div style="position: relative; margin-bottom: 0.75rem;">
+                <input type="text" id="campaign-platform-input" placeholder="/ um Plattform hinzuzufügen" class="detail-date-input" style="width: 100%;">
+                <div id="campaign-platform-menu" class="command-menu"></div>
+            </div>
+
+            <label class="text-xs text-gray-500 block mb-1">Ziel</label>
+            <select id="campaign-goal" class="detail-date-input mb-3" style="width: 100%;">
+                <option value="reichweite">Reichweite aufbauen</option>
+                <option value="produkt">Produkt einführen</option>
+                <option value="engagement">Engagement steigern</option>
+                <option value="leads">Leads generieren</option>
+                <option value="verkauf">Verkäufe steigern</option>
+                <option value="community">Community aufbauen</option>
+                <option value="branding">Markenbekanntheit</option>
+            </select>
+
+            <div class="mb-4">
+                <p class="text-sm text-gray-500">Start: <span id="campaign-start-display" class="date-display-link" onclick="app.toggleCampaignStartWheel()"></span></p>
+                <div id="campaign-start-wheel-section" style="display: none; margin-top: 0.5rem;">
+                    <div class="date-wheel-picker">
+                        <div class="date-wheel" id="wheel-campaign-start-day"></div>
+                        <div class="date-wheel" id="wheel-campaign-start-month"></div>
+                        <div class="date-wheel" id="wheel-campaign-start-year"></div>
+                        <div class="date-wheel-highlight"></div>
+                    </div>
+                    <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.confirmCampaignStart()">Start übernehmen</button>
                 </div>
-                <div style="flex: 1;">
-                    <label class="text-xs text-gray-500 block mb-1">Ende</label>
-                    <input type="date" id="campaign-end" class="detail-date-input" style="width: 100%;">
+            </div>
+
+            <div class="mb-4" id="campaign-end-section" style="display: none;">
+                <p class="text-sm text-gray-500">Ende: <span id="campaign-end-display" class="date-display-link" onclick="app.toggleCampaignEndWheel()"></span></p>
+                <div id="campaign-end-wheel-section" style="display: none; margin-top: 0.5rem;">
+                    <div class="date-wheel-picker">
+                        <div class="date-wheel" id="wheel-campaign-end-day"></div>
+                        <div class="date-wheel" id="wheel-campaign-end-month"></div>
+                        <div class="date-wheel" id="wheel-campaign-end-year"></div>
+                        <div class="date-wheel-highlight"></div>
+                    </div>
+                    <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.confirmCampaignEnd()">Ende übernehmen</button>
                 </div>
             </div>
 
             <label class="text-xs text-gray-500 block mb-1">Budget (€)</label>
             <input type="text" inputmode="numeric" id="campaign-budget" class="detail-date-input mb-3" style="width: 100%;">
 
-            <label class="text-xs text-gray-500 block mb-1">Ziel / Beschreibung</label>
-            <textarea id="campaign-goal" class="detail-date-input mb-3" style="width: 100%; resize: vertical;" rows="3"></textarea>
-
             <label class="text-xs text-gray-500 block mb-2">Status</label>
             <div id="campaign-status-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;"></div>
+
+            <div class="font-semibold mb-2">Ressourcen</div>
+            <div class="campaign-resource-grid mb-4">
+                <div class="campaign-resource-slot">
+                    <label class="campaign-resource-label">💡 Idee & Konzept</label>
+                    <input type="file" multiple data-category="idee" class="campaign-resource-upload mb-2">
+                    <div class="campaign-resource-list" data-category="idee"></div>
+                </div>
+                <div class="campaign-resource-slot">
+                    <label class="campaign-resource-label">📋 Strategie & Planung</label>
+                    <input type="file" multiple data-category="strategie" class="campaign-resource-upload mb-2">
+                    <div class="campaign-resource-list" data-category="strategie"></div>
+                </div>
+                <div class="campaign-resource-slot">
+                    <label class="campaign-resource-label">📊 Datenanalyse (Tracking)</label>
+                    <input type="file" multiple data-category="tracking" class="campaign-resource-upload mb-2">
+                    <div class="campaign-resource-list" data-category="tracking"></div>
+                </div>
+                <div class="campaign-resource-slot">
+                    <label class="campaign-resource-label">➡️ Next Steps</label>
+                    <input type="file" multiple data-category="nextSteps" class="campaign-resource-upload mb-2">
+                    <div class="campaign-resource-list" data-category="nextSteps"></div>
+                </div>
+                <div class="campaign-resource-slot">
+                    <label class="campaign-resource-label">📜 Verträge & Rechtliches</label>
+                    <input type="file" multiple data-category="vertraege" class="campaign-resource-upload mb-2">
+                    <div class="campaign-resource-list" data-category="vertraege"></div>
+                </div>
+            </div>
 
             <div id="campaign-linked-content" class="mb-4"></div>
 
@@ -989,6 +1095,29 @@
                     if (e.key !== 'Enter') return;
                     const value = platformCustomInput.value.trim();
                     if (value) this.setContentPlatform(value);
+                });
+
+                const campaignPlatformInput = document.getElementById('campaign-platform-input');
+                campaignPlatformInput.addEventListener('input', (e) => this.handleCampaignPlatformInput(e));
+                campaignPlatformInput.addEventListener('keypress', (e) => {
+                    if (e.key !== 'Enter') return;
+                    if (!campaignPlatformInput.value.startsWith('/')) return;
+                    e.preventDefault();
+                    const typed = campaignPlatformInput.value.slice(1).trim();
+                    if (typed) this.addCampaignPlatform(typed);
+                });
+
+                document.querySelectorAll('.campaign-resource-upload').forEach(input => {
+                    input.addEventListener('change', (e) => this.handleCampaignResourceUpload(e));
+                });
+
+                ['campaign-start-day', 'campaign-start-month', 'campaign-start-year'].forEach(id => {
+                    const field = id.replace('campaign-start-', '');
+                    this.wireWheelScroll('wheel-' + id, v => { this.campaignStartWheel[field] = v; });
+                });
+                ['campaign-end-day', 'campaign-end-month', 'campaign-end-year'].forEach(id => {
+                    const field = id.replace('campaign-end-', '');
+                    this.wireWheelScroll('wheel-' + id, v => { this.campaignEndWheel[field] = v; });
                 });
             }
 
@@ -1653,14 +1782,46 @@
                 const campaign = id ? this.campaigns.find(c => c.id === id) : null;
 
                 document.getElementById('campaign-name').value = campaign ? campaign.name : '';
-                document.getElementById('campaign-start').value = campaign ? campaign.startDate : '';
-                document.getElementById('campaign-end').value = campaign ? campaign.endDate : '';
                 document.getElementById('campaign-budget').value = campaign ? campaign.budget : 0;
-                document.getElementById('campaign-goal').value = campaign ? campaign.goal : '';
+                document.getElementById('campaign-goal').value = campaign ? campaign.goal : 'reichweite';
                 document.getElementById('campaign-delete-btn').style.display = campaign ? 'block' : 'none';
 
                 this.campaignStatus = campaign ? campaign.status : 'geplant';
                 this.renderCampaignStatusButtons();
+
+                this.campaignDraftPlatforms = campaign ? [...(campaign.platforms || [])] : [];
+                document.getElementById('campaign-platform-input').value = '';
+                document.getElementById('campaign-platform-menu').classList.remove('active');
+                this.renderCampaignPlatformChips();
+
+                this.campaignDraftStart = campaign ? campaign.startDate : null;
+                this.campaignDraftEnd = campaign ? campaign.endDate : null;
+
+                const today = new Date();
+                const [sy, sm, sd] = this.campaignDraftStart
+                    ? this.campaignDraftStart.split('-').map(Number)
+                    : [today.getFullYear(), today.getMonth() + 1, today.getDate()];
+                this.campaignStartWheel = { day: sd, month: sm - 1, year: sy };
+                this.buildCampaignWheel('campaign-start', sd, sm - 1, sy);
+
+                const [ey, em, ed] = this.campaignDraftEnd
+                    ? this.campaignDraftEnd.split('-').map(Number)
+                    : [sy, sm, sd];
+                this.campaignEndWheel = { day: ed, month: em - 1, year: ey };
+                this.buildCampaignWheel('campaign-end', ed, em - 1, ey);
+
+                document.getElementById('campaign-start-display').textContent =
+                    this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : 'nicht festgelegt';
+                document.getElementById('campaign-end-display').textContent =
+                    this.campaignDraftEnd ? this.formatCampaignDate(this.campaignDraftEnd) : 'nicht festgelegt';
+                document.getElementById('campaign-start-wheel-section').style.display = 'none';
+                document.getElementById('campaign-end-wheel-section').style.display = 'none';
+                document.getElementById('campaign-end-section').style.display = this.campaignDraftStart ? 'block' : 'none';
+
+                if (!campaign) {
+                    this.campaignDraftResources = { idee: [], strategie: [], tracking: [], nextSteps: [], vertraege: [] };
+                }
+                this.renderAllCampaignResourceLists();
 
                 if (campaign) {
                     this.renderCampaignLinkedContent(campaign);
@@ -1669,6 +1830,155 @@
                 }
 
                 document.getElementById('campaign-modal').classList.add('active');
+            }
+
+            buildCampaignWheel(prefix, day, month, year) {
+                const days = Array.from({ length: 31 }, (_, i) => i + 1);
+                const monthValues = this.months.map((_, i) => i);
+                const years = Array.from({ length: 6 }, (_, i) => year - 2 + i);
+
+                this.renderWheel(`wheel-${prefix}-day`, days, day, v => v);
+                this.renderWheel(`wheel-${prefix}-month`, monthValues, month, v => this.months[v]);
+                this.renderWheel(`wheel-${prefix}-year`, years, year, v => v);
+            }
+
+            toggleCampaignStartWheel() {
+                const section = document.getElementById('campaign-start-wheel-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            }
+
+            confirmCampaignStart() {
+                const w = this.campaignStartWheel;
+                this.campaignDraftStart = `${w.year}-${String(w.month + 1).padStart(2, '0')}-${String(w.day).padStart(2, '0')}`;
+                document.getElementById('campaign-start-display').textContent = this.formatCampaignDate(this.campaignDraftStart);
+                document.getElementById('campaign-start-wheel-section').style.display = 'none';
+                document.getElementById('campaign-end-section').style.display = 'block';
+            }
+
+            toggleCampaignEndWheel() {
+                const section = document.getElementById('campaign-end-wheel-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            }
+
+            confirmCampaignEnd() {
+                const w = this.campaignEndWheel;
+                this.campaignDraftEnd = `${w.year}-${String(w.month + 1).padStart(2, '0')}-${String(w.day).padStart(2, '0')}`;
+                document.getElementById('campaign-end-display').textContent = this.formatCampaignDate(this.campaignDraftEnd);
+                document.getElementById('campaign-end-wheel-section').style.display = 'none';
+            }
+
+            renderCampaignPlatformChips() {
+                document.getElementById('campaign-platform-chips').innerHTML = this.campaignDraftPlatforms.map(p => `
+                    <span class="platform-chip">${this.escapeHtml(p)} <span class="platform-chip-remove" onclick="app.removeCampaignPlatform('${p.replace(/'/g, "\\'")}')">✕</span></span>
+                `).join('');
+            }
+
+            addCampaignPlatform(platform) {
+                if (!this.campaignDraftPlatforms.includes(platform)) {
+                    this.campaignDraftPlatforms.push(platform);
+                }
+                const input = document.getElementById('campaign-platform-input');
+                input.value = '';
+                document.getElementById('campaign-platform-menu').classList.remove('active');
+                this.renderCampaignPlatformChips();
+                input.focus();
+            }
+
+            removeCampaignPlatform(platform) {
+                this.campaignDraftPlatforms = this.campaignDraftPlatforms.filter(p => p !== platform);
+                this.renderCampaignPlatformChips();
+            }
+
+            handleCampaignPlatformInput(e) {
+                const value = e.target.value;
+                const menu = document.getElementById('campaign-platform-menu');
+                if (value.startsWith('/')) {
+                    menu.classList.add('active');
+                    this.renderCampaignPlatformMenu(value.slice(1));
+                } else {
+                    menu.classList.remove('active');
+                }
+            }
+
+            renderCampaignPlatformMenu(filterText) {
+                const menu = document.getElementById('campaign-platform-menu');
+                const filtered = this.platforms.filter(p => p.toLowerCase().includes(filterText.trim().toLowerCase()));
+
+                if (filtered.length === 0) {
+                    menu.innerHTML = '<div class="command-menu-item text-gray-400">Enter drücken zum Übernehmen</div>';
+                    return;
+                }
+
+                menu.innerHTML = filtered.map(p => `<div class="command-menu-item" onclick="app.addCampaignPlatform('${p}')">${p}</div>`).join('');
+            }
+
+            getCampaignResourceTarget() {
+                if (this.editingCampaignId) {
+                    return this.campaigns.find(c => c.id === this.editingCampaignId);
+                }
+                return { resources: this.campaignDraftResources };
+            }
+
+            handleCampaignResourceUpload(e) {
+                const category = e.target.dataset.category;
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                const target = this.getCampaignResourceTarget();
+                if (!target.resources) target.resources = {};
+                if (!target.resources[category]) target.resources[category] = [];
+
+                let pending = files.length;
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        target.resources[category].push({ name: file.name, type: file.type, dataUrl: reader.result });
+                        pending--;
+                        if (pending === 0) {
+                            if (this.editingCampaignId) {
+                                try {
+                                    this.saveCampaigns();
+                                } catch (err) {
+                                    alert('Datei(en) konnten nicht gespeichert werden (Speicherplatz voll).');
+                                }
+                            }
+                            this.renderCampaignResourceList(category);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                e.target.value = '';
+            }
+
+            renderCampaignResourceList(category) {
+                const target = this.getCampaignResourceTarget();
+                const files = (target.resources && target.resources[category]) || [];
+                const container = document.querySelector(`.campaign-resource-list[data-category="${category}"]`);
+                if (!container) return;
+
+                container.innerHTML = files.map((f, i) => {
+                    const safeName = this.escapeHtml(f.name).replace(/"/g, '&quot;');
+                    return `
+                        <div class="resource-item">
+                            <a href="${f.dataUrl}" download="${safeName}">📎 ${safeName}</a>
+                            <span class="resource-remove" onclick="app.removeCampaignResource('${category}', ${i})">✕</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            removeCampaignResource(category, index) {
+                const target = this.getCampaignResourceTarget();
+                if (!target.resources || !target.resources[category]) return;
+
+                target.resources[category].splice(index, 1);
+                if (this.editingCampaignId) this.saveCampaigns();
+                this.renderCampaignResourceList(category);
+            }
+
+            renderAllCampaignResourceLists() {
+                ['idee', 'strategie', 'tracking', 'nextSteps', 'vertraege'].forEach(cat => this.renderCampaignResourceList(cat));
             }
 
             closeCampaignModal() {
@@ -1717,31 +2027,37 @@
                     alert('Bitte einen Namen für die Kampagne eingeben.');
                     return;
                 }
+                if (!this.campaignDraftStart) {
+                    alert('Bitte einen Start für die Kampagne festlegen.');
+                    return;
+                }
 
-                const startDate = document.getElementById('campaign-start').value;
-                const endDate = document.getElementById('campaign-end').value;
                 const budget = Math.max(0, parseInt(document.getElementById('campaign-budget').value, 10) || 0);
-                const goal = document.getElementById('campaign-goal').value.trim();
+                const goal = document.getElementById('campaign-goal').value;
+                const platforms = [...this.campaignDraftPlatforms];
 
                 if (this.editingCampaignId) {
                     const campaign = this.campaigns.find(c => c.id === this.editingCampaignId);
                     if (campaign) {
                         campaign.name = name;
-                        campaign.startDate = startDate;
-                        campaign.endDate = endDate;
+                        campaign.startDate = this.campaignDraftStart;
+                        campaign.endDate = this.campaignDraftEnd;
                         campaign.budget = budget;
                         campaign.goal = goal;
+                        campaign.platforms = platforms;
                         campaign.status = this.campaignStatus;
                     }
                 } else {
                     this.campaigns.push({
                         id: Date.now(),
                         name,
-                        startDate,
-                        endDate,
+                        startDate: this.campaignDraftStart,
+                        endDate: this.campaignDraftEnd,
                         budget,
                         goal,
-                        status: this.campaignStatus
+                        platforms,
+                        status: this.campaignStatus,
+                        resources: this.campaignDraftResources
                     });
                 }
 
