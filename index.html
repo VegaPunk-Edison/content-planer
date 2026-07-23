@@ -332,6 +332,20 @@
             color: #d1d5db;
         }
 
+        .detail-date-input {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            background: white;
+        }
+
+        .detail-date-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
         .stat-input {
             width: 2.75rem;
             border: none;
@@ -511,6 +525,11 @@
 
             <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 block mb-1">Upload-Datum</label>
+                <input type="date" id="detail-date" class="detail-date-input">
+            </div>
+
             <div class="font-semibold mb-2">Ressourcen</div>
             <input type="file" id="detail-resource-upload" multiple class="mb-3">
             <div id="detail-resource-list" class="mb-6"></div>
@@ -673,6 +692,7 @@
                     });
                 });
                 document.getElementById('detail-resource-upload').addEventListener('change', (e) => this.handleResourceUpload(e));
+                document.getElementById('detail-date').addEventListener('change', (e) => this.updateContentDate(e.target.value));
             }
 
             openMonthPicker() {
@@ -914,6 +934,10 @@
                 document.getElementById('detail-comments').value = this.formatNumber(content.comments || 0);
                 document.getElementById('detail-likes').value = this.formatNumber(content.likes || 0);
 
+                const [year, month, day] = this.getDateKey(this.selectedDay).split('-').map(Number);
+                document.getElementById('detail-date').value =
+                    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
                 this.renderResourceList(content);
 
                 const statuses = [
@@ -935,6 +959,28 @@
                 this.saveContents();
                 this.renderContentDetail(content);
                 this.loadDashboard();
+                this.render();
+            }
+
+            updateContentDate(newDateValue) {
+                if (!newDateValue) return;
+                const content = this.getSelectedContent();
+                if (!content) return;
+
+                const oldDateKey = this.getDateKey(this.selectedDay);
+                const [year, month, day] = newDateValue.split('-').map(Number);
+                const newDateKey = `${year}-${month - 1}-${day}`;
+
+                if (newDateKey === oldDateKey) return;
+
+                this.contents[oldDateKey] = (this.contents[oldDateKey] || []).filter(c => c.id !== content.id);
+                if (!this.contents[newDateKey]) this.contents[newDateKey] = [];
+                this.contents[newDateKey].push(content);
+
+                this.saveContents();
+                this.closeContentDetail();
+                this.loadDashboard();
+                this.render();
             }
 
             updateContentStat(field) {
@@ -1150,7 +1196,12 @@
                     const cls = isToday ? 'today' : '';
 
                     const dayContents = this.contents[this.getDateKey(day)] || [];
-                    const platforms = [...new Set(dayContents.map(c => c.platform).filter(Boolean))];
+                    const platforms = [...new Set(
+                        dayContents
+                            .filter(c => c.status === 'scheduled' || c.status === 'uploaded')
+                            .map(c => c.platform)
+                            .filter(Boolean)
+                    )];
                     const dotsHtml = platforms.length > 0
                         ? `<div class="day-platform-dots">${platforms.map(p =>
                             `<span class="platform-dot" style="background: ${this.getPlatformColor(p)};" title="${this.escapeHtml(p)}"></span>`
