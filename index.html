@@ -201,6 +201,13 @@
             background: #dbeafe;
         }
 
+        .creator-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
         .tab-bar {
             display: flex;
             gap: 2rem;
@@ -445,63 +452,65 @@
             </div>
         </div>
 
-        <!-- Tabs -->
-        <div class="tab-bar">
-            <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
-            <div class="tab" onclick="app.switchTab('docs')">Docs</div>
-            <div class="tab" onclick="app.switchTab('stats')">Stats</div>
-        </div>
+        <!-- Tabs + Tab-Inhalte: erst sichtbar, sobald ein Format gewählt wurde -->
+        <div id="creator-body" class="creator-body">
+            <div class="tab-bar">
+                <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
+                <div class="tab" onclick="app.switchTab('docs')">Docs</div>
+                <div class="tab" onclick="app.switchTab('stats')">Stats</div>
+            </div>
 
-        <!-- Dashboard Tab -->
-        <div id="dashboard-tab" class="tab-content active">
-            <div class="max-w-6xl mx-auto">
-                <h3 class="text-2xl font-bold mb-6">Aktive & geplante Contents</h3>
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-6">Aktive & geplante Contents</h3>
 
-                <!-- Content Input -->
-                <div class="todo-input-wrapper mb-6">
-                    <input
-                        type="text"
-                        id="content-input"
-                        placeholder="Neuen Content planen..."
-                        autocomplete="off"
-                    >
-                    <button id="add-content-btn" class="add-btn">+</button>
+                    <!-- Content Input -->
+                    <div class="todo-input-wrapper mb-6">
+                        <input
+                            type="text"
+                            id="content-input"
+                            placeholder="Neuen Content planen..."
+                            autocomplete="off"
+                        >
+                        <button id="add-content-btn" class="add-btn">+</button>
 
-                    <!-- Command Menu -->
-                    <div id="command-menu" class="command-menu">
-                        <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
-                        <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
-                        <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
-                        <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
-                        <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
-                        <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                        <!-- Command Menu -->
+                        <div id="command-menu" class="command-menu">
+                            <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
+                            <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                        </div>
+                    </div>
+
+                    <div id="dashboard-content" class="content-list">
+                        <!-- Inhalte werden hier eingefügt -->
                     </div>
                 </div>
+            </div>
 
-                <div id="dashboard-content" class="content-list">
-                    <!-- Inhalte werden hier eingefügt -->
+            <!-- Docs Tab -->
+            <div id="docs-tab" class="tab-content">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-6">Dokumentation & Notizen</h3>
+
+                    <div id="docs-content" class="content-list">
+                        <!-- Docs werden hier eingefügt -->
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Docs Tab -->
-        <div id="docs-tab" class="tab-content">
-            <div class="max-w-6xl mx-auto">
-                <h3 class="text-2xl font-bold mb-6">Dokumentation & Notizen</h3>
+            <!-- Stats Tab -->
+            <div id="stats-tab" class="tab-content">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-6">Performance & Statistiken</h3>
 
-                <div id="docs-content" class="content-list">
-                    <!-- Docs werden hier eingefügt -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats Tab -->
-        <div id="stats-tab" class="tab-content">
-            <div class="max-w-6xl mx-auto">
-                <h3 class="text-2xl font-bold mb-6">Performance & Statistiken</h3>
-
-                <div id="stats-content" class="dashboard-grid">
-                    <!-- Stats werden hier eingefügt -->
+                    <div id="stats-content" class="dashboard-grid">
+                        <!-- Stats werden hier eingefügt -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -581,6 +590,7 @@
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = format;
+                document.getElementById('creator-body').style.display = '';
             }
 
             toggleFormatMenu() {
@@ -639,6 +649,10 @@
                 document.body.classList.add('modal-open');
                 document.getElementById('content-input').focus();
                 this.selectedFormat = null;
+
+                const dateKey = this.getDateKey(this.selectedDay);
+                const hasContent = (this.contents[dateKey] || []).length > 0;
+                document.getElementById('creator-body').style.display = hasContent ? '' : 'none';
 
                 this.loadDashboard();
             }
