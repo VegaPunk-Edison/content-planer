@@ -12,6 +12,7 @@
 
         .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
         .calendar-day {
+            position: relative;
             aspect-ratio: 1;
             display: flex;
             align-items: center;
@@ -32,6 +33,22 @@
             background: #3b82f6;
             color: white;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .day-platform-dots {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 3px;
+        }
+
+        .platform-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
         }
 
         .month-selector {
@@ -1107,6 +1124,7 @@
                 document.getElementById('platform-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = 'Format auswählen';
                 this.loadDashboard();
+                this.render();
             }
 
             escapeHtml(text) {
@@ -1130,12 +1148,34 @@
                 calendarDays.forEach(day => {
                     const isToday = this.isToday(day);
                     const cls = isToday ? 'today' : '';
-                    html += `<div class="calendar-day ${cls}" onclick="app.selectDay(${day})">${day}</div>`;
+
+                    const dayContents = this.contents[this.getDateKey(day)] || [];
+                    const platforms = [...new Set(dayContents.map(c => c.platform).filter(Boolean))];
+                    const dotsHtml = platforms.length > 0
+                        ? `<div class="day-platform-dots">${platforms.map(p =>
+                            `<span class="platform-dot" style="background: ${this.getPlatformColor(p)};" title="${this.escapeHtml(p)}"></span>`
+                          ).join('')}</div>`
+                        : '';
+
+                    html += `<div class="calendar-day ${cls}" onclick="app.selectDay(${day})">${dotsHtml}${day}</div>`;
                 });
 
                 html += `</div>`;
 
                 document.getElementById('calendar-container').innerHTML = html;
+            }
+
+            getPlatformColor(platform) {
+                const colors = {
+                    'Facebook': '#7dc4fa',
+                    'LinkedIn': '#004182',
+                    'YouTube': '#ff0000',
+                    'TikTok': '#ec407a',
+                    'Instagram': 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
+                    'Snapchat': '#fffc00',
+                    'Skool': '#1e1b4b'
+                };
+                return colors[platform] || '#9ca3af';
             }
         }
 
