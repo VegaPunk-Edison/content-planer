@@ -1936,6 +1936,10 @@
                 } else {
                     this.renderCampaignSummary();
                 }
+
+                const nextKey = this.campaignStepOrder[Math.min(idx + 1, this.campaignStepOrder.length - 1)];
+                const nextEl = document.getElementById('campaign-step-' + nextKey);
+                if (nextEl) nextEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             confirmCampaignName() {
