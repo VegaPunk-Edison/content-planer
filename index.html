@@ -281,6 +281,11 @@
             color: #374151;
         }
 
+        .status-erledigt {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
         .status-btn {
             cursor: pointer;
             padding: 0.5rem 1rem;
@@ -473,8 +478,8 @@
         <div id="creator-body" class="creator-body">
             <div class="tab-bar">
                 <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
-                <div class="tab" onclick="app.switchTab('docs')">Docs</div>
                 <div class="tab" onclick="app.switchTab('stats')">Stats</div>
+                <div class="tab" onclick="app.switchTab('archive')">Archive</div>
             </div>
 
             <!-- Dashboard Tab -->
@@ -512,17 +517,6 @@
                 </div>
             </div>
 
-            <!-- Docs Tab -->
-            <div id="docs-tab" class="tab-content">
-                <div class="max-w-6xl mx-auto">
-                    <h3 class="text-2xl font-bold mb-6">Dokumentation & Notizen</h3>
-
-                    <div id="docs-content" class="content-list">
-                        <!-- Docs werden hier eingefügt -->
-                    </div>
-                </div>
-            </div>
-
             <!-- Stats Tab -->
             <div id="stats-tab" class="tab-content">
                 <div class="max-w-6xl mx-auto">
@@ -530,6 +524,17 @@
 
                     <div id="stats-content" class="dashboard-grid">
                         <!-- Stats werden hier eingefügt -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archive Tab -->
+            <div id="archive-tab" class="tab-content">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-2xl font-bold mb-6">Archiv – erledigte Contents</h3>
+
+                    <div id="archive-content" class="content-list">
+                        <!-- Erledigte Contents werden hier eingefügt -->
                     </div>
                 </div>
             </div>
@@ -755,8 +760,8 @@
                 document.getElementById(tab + '-tab').classList.add('active');
 
                 if (tab === 'dashboard') this.loadDashboard();
-                if (tab === 'docs') this.loadDocs();
                 if (tab === 'stats') this.loadStats();
+                if (tab === 'archive') this.loadArchive();
             }
 
             loadDashboard() {
@@ -806,7 +811,8 @@
                 const statuses = [
                     { key: 'draft', label: 'Draft' },
                     { key: 'scheduled', label: 'Scheduled' },
-                    { key: 'live', label: 'Live' }
+                    { key: 'live', label: 'Live' },
+                    { key: 'erledigt', label: 'Erledigt' }
                 ];
                 document.getElementById('detail-status-buttons').innerHTML = statuses.map(s => {
                     const active = s.key === content.status ? 'active' : '';
@@ -825,26 +831,35 @@
                 this.loadDashboard();
             }
 
-            loadDocs() {
-                const dateKey = this.getDateKey(this.selectedDay);
-                const contents = this.contents[dateKey] || [];
+            loadArchive() {
+                const archiveContent = document.getElementById('archive-content');
 
-                const docsContent = document.getElementById('docs-content');
-
-                if (contents.length === 0) {
-                    docsContent.innerHTML = '<p class="text-gray-400 text-center py-8">Keine Dokumentation vorhanden</p>';
-                } else {
-                    let docsHtml = '';
-                    contents.forEach(content => {
-                        docsHtml += `
-                            <div class="doc-item">
-                                <div class="font-semibold">${this.escapeHtml(content.title)}</div>
-                                <div class="text-gray-600 text-sm mt-1">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</div>
-                            </div>
-                        `;
+                const items = [];
+                Object.keys(this.contents).forEach(dateKey => {
+                    (this.contents[dateKey] || []).forEach(content => {
+                        if (content.status === 'erledigt') {
+                            items.push({ ...content, dateKey });
+                        }
                     });
-                    docsContent.innerHTML = docsHtml;
+                });
+
+                if (items.length === 0) {
+                    archiveContent.innerHTML = '<p class="text-gray-400 text-center py-8">Noch keine erledigten Contents im Archiv</p>';
+                    return;
                 }
+
+                items.sort((a, b) => b.id - a.id);
+
+                archiveContent.innerHTML = items.map(content => {
+                    const [year, month, day] = content.dateKey.split('-').map(Number);
+                    const dateLabel = `${day}. ${this.months[month]} ${year}`;
+                    return `
+                        <div class="doc-item">
+                            <div class="font-semibold">${this.escapeHtml(content.title)}</div>
+                            <div class="text-gray-600 text-sm mt-1">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''} · ${dateLabel}</div>
+                        </div>
+                    `;
+                }).join('');
             }
 
             loadStats() {
