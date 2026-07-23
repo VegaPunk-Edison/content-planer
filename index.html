@@ -992,21 +992,24 @@
                 </button>
                 <div>
                     <h2 id="creator-date" class="text-xl font-bold"></h2>
-                    <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
-                        <div id="format-badge" class="format-badge" onclick="app.toggleFormatMenu()"></div>
-                        <div id="format-badge-menu" class="command-menu">
-                            <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
-                            <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
-                            <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
-                            <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
-                            <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
-                            <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                    <div id="dashboard-header-actions">
+                        <div style="position: relative; display: inline-block; margin-top: 0.5rem;">
+                            <div id="format-badge" class="format-badge" onclick="app.toggleFormatMenu()"></div>
+                            <div id="format-badge-menu" class="command-menu">
+                                <div class="command-menu-item" onclick="app.selectFormat('📸 Bild hochladen')">📸 Bild hochladen</div>
+                                <div class="command-menu-item" onclick="app.selectFormat('📱 Short-form')">📱 Short-form</div>
+                                <div class="command-menu-item" onclick="app.selectFormat('📹 Mid-form')">📹 Mid-form</div>
+                                <div class="command-menu-item" onclick="app.selectFormat('📺 Semi-Long-form')">📺 Semi-Long-form</div>
+                                <div class="command-menu-item" onclick="app.selectFormat('📄 Long Form')">📄 Long Form</div>
+                                <div class="command-menu-item" onclick="app.selectFormat('🎬 Long Clip')">🎬 Long Clip</div>
+                            </div>
+                        </div>
+                        <div style="position: relative; display: inline-block; margin-top: 0.5rem; margin-left: 0.5rem;">
+                            <div id="campaign-badge" class="format-badge" onclick="app.toggleCampaignCreateMenu()"></div>
+                            <div id="campaign-badge-menu" class="command-menu"></div>
                         </div>
                     </div>
-                    <div style="position: relative; display: inline-block; margin-top: 0.5rem; margin-left: 0.5rem;">
-                        <div id="campaign-badge" class="format-badge" onclick="app.toggleCampaignCreateMenu()"></div>
-                        <div id="campaign-badge-menu" class="command-menu"></div>
-                    </div>
+                    <div id="campaign-start-header-badge" class="format-badge" style="display: none; margin-top: 0.5rem;" onclick="app.openCampaignModal()">Kampagne starten</div>
                 </div>
             </div>
         </div>
@@ -1058,10 +1061,7 @@
             <!-- Kampagnen Tab -->
             <div id="campaigns-tab" class="tab-content">
                 <div class="max-w-6xl mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl font-bold">Kampagnen</h3>
-                        <button class="month-picker-btn month-picker-btn-confirm" style="flex: none; padding: 0.6rem 1.2rem;" onclick="app.openCampaignModal()">+ Neue Kampagne</button>
-                    </div>
+                    <h3 class="text-2xl font-bold mb-6">Kampagnen</h3>
 
                     <div id="campaigns-list" class="content-list">
                         <!-- Kampagnen werden hier eingefügt -->
@@ -1381,6 +1381,8 @@
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('campaign-badge').textContent = 'Kampagne wählen';
                 document.getElementById('campaign-badge-menu').classList.remove('active');
+                document.getElementById('dashboard-header-actions').style.display = '';
+                document.getElementById('campaign-start-header-badge').style.display = 'none';
 
                 document.getElementById('content-creator-view').classList.add('active');
                 document.body.classList.add('modal-open');
@@ -1427,6 +1429,9 @@
                     t.classList.remove('active');
                 });
                 document.getElementById(tab + '-tab').classList.add('active');
+
+                document.getElementById('dashboard-header-actions').style.display = tab === 'dashboard' ? '' : 'none';
+                document.getElementById('campaign-start-header-badge').style.display = tab === 'campaigns' ? 'inline-block' : 'none';
 
                 if (tab === 'dashboard') this.loadDashboard();
                 if (tab === 'campaigns') this.renderCampaignsTab();
