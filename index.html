@@ -314,14 +314,17 @@
         }
 
         .stat-input {
-            width: 4.5rem;
+            width: 3.5rem;
             border: none;
-            border-bottom: 1px solid #d1d5db;
+            border-bottom: 1px dashed transparent;
             background: transparent;
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #3b82f6;
-            padding: 0.25rem 0;
+            font: inherit;
+            color: inherit;
+            padding: 0;
+        }
+
+        .stat-input:hover {
+            border-bottom-color: #d1d5db;
         }
 
         .stat-input:focus {
@@ -487,20 +490,11 @@
             <h3 id="detail-title" class="text-xl font-bold mb-1"></h3>
             <p id="detail-meta" class="text-sm text-blue-600 mb-4"></p>
 
-            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
-                <label>
-                    <div class="text-xs text-gray-500 mb-1">👁️ Views</div>
-                    <input type="number" id="detail-views" class="stat-input" min="0">
-                </label>
-                <label>
-                    <div class="text-xs text-gray-500 mb-1">💬 Kommentare</div>
-                    <input type="number" id="detail-comments" class="stat-input" min="0">
-                </label>
-                <label>
-                    <div class="text-xs text-gray-500 mb-1">❤️ Likes</div>
-                    <input type="number" id="detail-likes" class="stat-input" min="0">
-                </label>
-            </div>
+            <p class="text-sm text-gray-500 mb-4">
+                👁️ <input type="number" id="detail-views" class="stat-input" min="0"> Views |
+                💬 <input type="number" id="detail-comments" class="stat-input" min="0"> Kommentare |
+                ❤️ <input type="number" id="detail-likes" class="stat-input" min="0"> Likes
+            </p>
 
             <div class="font-semibold mb-2">Ressourcen</div>
             <input type="file" id="detail-resource-upload" multiple class="mb-3">
@@ -864,7 +858,7 @@
                                 <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
                             </div>
                             <p class="text-sm text-blue-600 mb-2">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</p>
-                            <p class="text-sm text-gray-500">👁️ ${content.views || 0} · 💬 ${content.comments || 0} · ❤️ ${content.likes || 0}</p>
+                            <p class="text-sm text-gray-500">👁️ ${content.views || 0} Views | 💬 ${content.comments || 0} Kommentare | ❤️ ${content.likes || 0} Likes</p>
                         </div>
                     `).join('');
                 }
