@@ -281,6 +281,28 @@
             color: #374151;
         }
 
+        .status-btn {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .status-btn:hover {
+            opacity: 0.85;
+        }
+
+        .status-btn.active {
+            border-color: currentColor;
+        }
+
+        .content-card.clickable {
+            cursor: pointer;
+        }
+
         .stat-box {
             background: white;
             border: 1px solid #e5e7eb;
@@ -399,6 +421,20 @@
         </div>
     </div>
 
+    <!-- CONTENT DETAILANSICHT -->
+    <div id="content-detail-modal" class="month-picker">
+        <div class="month-picker-content" style="max-width: 500px; text-align: left;">
+            <h3 id="detail-title" class="text-xl font-bold mb-2"></h3>
+            <p id="detail-meta" class="text-sm text-blue-600 mb-2"></p>
+            <p id="detail-stats" class="text-sm text-gray-500 mb-4"></p>
+            <div class="font-semibold mb-2">Status</div>
+            <div id="detail-status-buttons" class="mb-6" style="display: flex; gap: 0.5rem;"></div>
+            <div class="month-picker-footer">
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeContentDetail()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
     <!-- KALENDER ANSICHT -->
     <div id="calendar-view" class="max-w-2xl mx-auto">
         <div class="bg-white rounded-lg shadow-lg p-8">
@@ -512,6 +548,7 @@
                 this.selectedDay = null;
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
+                this.selectedContentId = null;
                 this.contents = this.loadContents();
                 this.activeTab = 'dashboard';
                 this.init();
@@ -696,6 +733,7 @@
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('platform-menu').classList.remove('active');
+                this.closeContentDetail();
                 this.selectedDay = null;
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
@@ -731,7 +769,7 @@
                     dashboardContent.innerHTML = '<p class="text-gray-400 text-center py-8">Noch kein Content für diesen Tag geplant</p>';
                 } else {
                     dashboardContent.innerHTML = contents.map(content => `
-                        <div class="content-card">
+                        <div class="content-card clickable" onclick="app.openContentDetail(${content.id})">
                             <div class="flex justify-between items-start mb-2">
                                 <h4 class="font-bold text-lg">${this.escapeHtml(content.title)}</h4>
                                 <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
@@ -741,6 +779,50 @@
                         </div>
                     `).join('');
                 }
+            }
+
+            openContentDetail(id) {
+                const dateKey = this.getDateKey(this.selectedDay);
+                const content = (this.contents[dateKey] || []).find(c => c.id === id);
+                if (!content) return;
+
+                this.selectedContentId = id;
+                this.renderContentDetail(content);
+                document.getElementById('content-detail-modal').classList.add('active');
+            }
+
+            closeContentDetail() {
+                document.getElementById('content-detail-modal').classList.remove('active');
+                this.selectedContentId = null;
+            }
+
+            renderContentDetail(content) {
+                document.getElementById('detail-title').textContent = content.title;
+                document.getElementById('detail-meta').textContent =
+                    content.format + (content.platform ? ' · ' + content.platform : '');
+                document.getElementById('detail-stats').textContent =
+                    `👁️ ${content.views || 0} Views | 💬 ${content.engagement || 0} Engagement`;
+
+                const statuses = [
+                    { key: 'draft', label: 'Draft' },
+                    { key: 'scheduled', label: 'Scheduled' },
+                    { key: 'live', label: 'Live' }
+                ];
+                document.getElementById('detail-status-buttons').innerHTML = statuses.map(s => {
+                    const active = s.key === content.status ? 'active' : '';
+                    return `<div class="status-btn status-${s.key} ${active}" onclick="app.setContentStatus('${s.key}')">${s.label.toUpperCase()}</div>`;
+                }).join('');
+            }
+
+            setContentStatus(status) {
+                const dateKey = this.getDateKey(this.selectedDay);
+                const content = (this.contents[dateKey] || []).find(c => c.id === this.selectedContentId);
+                if (!content) return;
+
+                content.status = status;
+                this.saveContents();
+                this.renderContentDetail(content);
+                this.loadDashboard();
             }
 
             loadDocs() {
