@@ -499,6 +499,16 @@
             text-align: center;
         }
 
+        .stat-box.clickable {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-box.clickable:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
         .stat-value {
             font-size: 2rem;
             font-weight: bold;
@@ -515,6 +525,41 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
+        }
+
+        .dim-btn {
+            cursor: pointer;
+            padding: 0.4rem 0.9rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #f3f4f6;
+            color: #374151;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .dim-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .dim-btn.active {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #3b82f6;
+        }
+
+        .drilldown-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+        }
+
+        .drilldown-row-value {
+            font-weight: 700;
+            color: #3b82f6;
         }
 
         .content-list {
@@ -646,7 +691,9 @@
                 </span>
             </p>
 
-            <div class="stat-row text-sm text-gray-500 mb-4"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
+            <div class="stat-row text-sm text-gray-500 mb-2"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
+
+            <div class="stat-row text-sm text-gray-500 mb-4"><span>💰&nbsp;<input type="text" inputmode="numeric" id="detail-spend" class="stat-input"></span><span class="stat-divider">|</span><span>🎯&nbsp;<input type="text" inputmode="numeric" id="detail-conversions" class="stat-input"></span><span class="stat-divider">|</span><span>💵&nbsp;<input type="text" inputmode="numeric" id="detail-revenue" class="stat-input"></span></div>
 
             <div class="mb-4">
                 <p class="text-sm text-gray-500">Upload-Datum: <span id="detail-date-display" class="date-display-link" onclick="app.toggleDateWheel()"></span></p>
@@ -683,6 +730,18 @@
             <div id="detail-resource-list"></div>
             <div class="month-picker-footer" style="margin-top: 1.5rem;">
                 <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeResourceDetail()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS DRILLDOWN -->
+    <div id="stats-drilldown-modal" class="month-picker" style="z-index: 110;">
+        <div class="month-picker-content" style="max-width: 560px; text-align: left; max-height: 85vh; overflow-y: auto;">
+            <h3 id="drilldown-title" class="text-xl font-bold mb-4"></h3>
+            <div id="drilldown-dimensions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;"></div>
+            <div id="drilldown-content"></div>
+            <div class="month-picker-footer" style="margin-top: 1.5rem;">
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.closeStatsDrilldown()">Schließen</button>
             </div>
         </div>
     </div>
@@ -822,7 +881,7 @@
                 });
                 document.getElementById('content-input').addEventListener('input', (e) => this.handleCommandInput(e));
 
-                ['views', 'comments', 'likes'].forEach(field => {
+                ['views', 'comments', 'likes', 'spend', 'conversions', 'revenue'].forEach(field => {
                     const input = document.getElementById('detail-' + field);
                     input.addEventListener('focus', () => {
                         const content = this.getSelectedContent();
@@ -1126,6 +1185,9 @@
                 document.getElementById('detail-views').value = this.formatNumber(content.views || 0);
                 document.getElementById('detail-comments').value = this.formatNumber(content.comments || 0);
                 document.getElementById('detail-likes').value = this.formatNumber(content.likes || 0);
+                document.getElementById('detail-spend').value = this.formatNumber(content.spend || 0);
+                document.getElementById('detail-conversions').value = this.formatNumber(content.conversions || 0);
+                document.getElementById('detail-revenue').value = this.formatNumber(content.revenue || 0);
 
                 const [year, month, day] = this.getDateKey(this.selectedDay).split('-').map(Number);
                 document.getElementById('detail-date-display').textContent = `${day}. ${this.months[month]} ${year}`;
@@ -1437,33 +1499,175 @@
                 }).join('');
             }
 
+            getAllContentsFlat() {
+                const items = [];
+                Object.keys(this.contents).forEach(dateKey => {
+                    const [year, month, day] = dateKey.split('-').map(Number);
+                    (this.contents[dateKey] || []).forEach(content => {
+                        items.push({ content, dateKey, year, month, day });
+                    });
+                });
+                return items;
+            }
+
+            sumField(items, field) {
+                return items.reduce((sum, i) => sum + (i.content[field] || 0), 0);
+            }
+
+            computeMetricForGroup(items, metric) {
+                const views = this.sumField(items, 'views');
+                const engagements = this.sumField(items, 'likes') + this.sumField(items, 'comments');
+                const spend = this.sumField(items, 'spend');
+                const revenue = this.sumField(items, 'revenue');
+                const conversions = this.sumField(items, 'conversions');
+
+                switch (metric) {
+                    case 'views':
+                        return this.formatNumber(views);
+                    case 'engagement': {
+                        const rate = views > 0 ? (engagements / views) * 100 : 0;
+                        return rate.toFixed(1) + '%';
+                    }
+                    case 'conversion': {
+                        const cpe = engagements > 0 ? spend / engagements : 0;
+                        return `${this.formatNumber(conversions)} · ${cpe.toFixed(2)} € CPE`;
+                    }
+                    case 'roas': {
+                        const roas = spend > 0 ? revenue / spend : 0;
+                        return roas.toFixed(1) + 'x';
+                    }
+                    default:
+                        return '';
+                }
+            }
+
             loadStats() {
-                const dateKey = this.getDateKey(this.selectedDay);
-                const contents = this.contents[dateKey] || [];
+                const allItems = this.getAllContentsFlat();
 
-                const totalViews = contents.reduce((sum, c) => sum + (c.views || 0), 0);
-                const totalComments = contents.reduce((sum, c) => sum + (c.comments || 0), 0);
-                const totalLikes = contents.reduce((sum, c) => sum + (c.likes || 0), 0);
+                const views = this.sumField(allItems, 'views');
+                const likes = this.sumField(allItems, 'likes');
+                const comments = this.sumField(allItems, 'comments');
+                const spend = this.sumField(allItems, 'spend');
+                const revenue = this.sumField(allItems, 'revenue');
+                const conversions = this.sumField(allItems, 'conversions');
+                const engagements = likes + comments;
+                const engagementRate = views > 0 ? (engagements / views) * 100 : 0;
+                const cpe = engagements > 0 ? spend / engagements : 0;
+                const roas = spend > 0 ? revenue / spend : 0;
 
-                const statsContent = document.getElementById('stats-content');
-                statsContent.innerHTML = `
-                    <div class="stat-box">
-                        <div class="stat-value">${this.formatNumber(totalViews)}</div>
-                        <div class="stat-label">Gesamte Views</div>
+                document.getElementById('stats-content').innerHTML = `
+                    <div class="stat-box clickable" onclick="app.openStatsDrilldown('views')">
+                        <div class="stat-value">${this.formatNumber(views)}</div>
+                        <div class="stat-label">Views</div>
+                    </div>
+                    <div class="stat-box clickable" onclick="app.openStatsDrilldown('engagement')">
+                        <div class="stat-value">${engagementRate.toFixed(1)}%</div>
+                        <div class="stat-label">Engagement Rate</div>
+                    </div>
+                    <div class="stat-box clickable" onclick="app.openStatsDrilldown('conversion')">
+                        <div class="stat-value">${this.formatNumber(conversions)} · ${cpe.toFixed(2)} €</div>
+                        <div class="stat-label">Conversion & CPE</div>
+                    </div>
+                    <div class="stat-box clickable" onclick="app.openStatsDrilldown('roas')">
+                        <div class="stat-value">${roas.toFixed(1)}x</div>
+                        <div class="stat-label">ROAS</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value">${contents.length}</div>
+                        <div class="stat-value">${allItems.length}</div>
                         <div class="stat-label">Contents erstellt</div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-value">${this.formatNumber(totalComments)}</div>
-                        <div class="stat-label">Gesamt Kommentare</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">${this.formatNumber(totalLikes)}</div>
-                        <div class="stat-label">Gesamt Likes</div>
-                    </div>
                 `;
+            }
+
+            getGroupKey(item, dimension) {
+                const { year, month, day, content } = item;
+                switch (dimension) {
+                    case 'jahr': return String(year);
+                    case 'quartal': return `Q${Math.floor(month / 3) + 1} ${year}`;
+                    case 'monat': return `${this.months[month]} ${year}`;
+                    case 'tag': return `${day}. ${this.months[month]} ${year}`;
+                    case 'video': return content.title || 'Ohne Titel';
+                    case 'format': return content.format || 'Ohne Format';
+                    case 'plattform': return content.platform || 'Ohne Plattform';
+                    default: return 'Alle';
+                }
+            }
+
+            openStatsDrilldown(metric) {
+                const dimensionsByMetric = {
+                    views: ['jahr', 'quartal', 'monat', 'tag', 'video'],
+                    engagement: ['format', 'plattform'],
+                    conversion: ['jahr', 'quartal', 'monat', 'tag'],
+                    roas: ['jahr', 'quartal', 'monat', 'tag']
+                };
+                const titles = {
+                    views: 'Views',
+                    engagement: 'Engagement Rate',
+                    conversion: 'Conversion & CPE',
+                    roas: 'ROAS'
+                };
+
+                this.drilldownMetric = metric;
+                this.drilldownDimensions = dimensionsByMetric[metric];
+                this.drilldownDimension = this.drilldownDimensions[0];
+
+                document.getElementById('drilldown-title').textContent = titles[metric];
+                this.renderDrilldownDimensions();
+                this.renderDrilldownContent();
+                document.getElementById('stats-drilldown-modal').classList.add('active');
+            }
+
+            closeStatsDrilldown() {
+                document.getElementById('stats-drilldown-modal').classList.remove('active');
+            }
+
+            setDrilldownDimension(dim) {
+                this.drilldownDimension = dim;
+                this.renderDrilldownDimensions();
+                this.renderDrilldownContent();
+            }
+
+            renderDrilldownDimensions() {
+                const labels = {
+                    jahr: 'Jahr', quartal: 'Quartal', monat: 'Monat', tag: 'Tag', video: 'Video',
+                    format: 'Format', plattform: 'Plattform'
+                };
+                document.getElementById('drilldown-dimensions').innerHTML = this.drilldownDimensions.map(dim => {
+                    const active = dim === this.drilldownDimension ? 'active' : '';
+                    return `<div class="dim-btn ${active}" onclick="app.setDrilldownDimension('${dim}')">${labels[dim]}</div>`;
+                }).join('');
+            }
+
+            renderDrilldownContent() {
+                const container = document.getElementById('drilldown-content');
+                const allItems = this.getAllContentsFlat();
+
+                if (allItems.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-center py-8">Noch keine Daten vorhanden</p>';
+                    return;
+                }
+
+                const groups = {};
+                allItems.forEach(item => {
+                    const key = this.getGroupKey(item, this.drilldownDimension);
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item);
+                });
+
+                const rows = Object.keys(groups).map(key => ({
+                    key,
+                    value: this.computeMetricForGroup(groups[key], this.drilldownMetric),
+                    sortWeight: this.sumField(groups[key], 'views')
+                }));
+
+                rows.sort((a, b) => b.sortWeight - a.sortWeight);
+
+                container.innerHTML = rows.map(r => `
+                    <div class="drilldown-row">
+                        <span>${this.escapeHtml(r.key)}</span>
+                        <span class="drilldown-row-value">${r.value}</span>
+                    </div>
+                `).join('');
             }
 
             addContent() {
@@ -1490,6 +1694,9 @@
                     views: 0,
                     comments: 0,
                     likes: 0,
+                    spend: 0,
+                    conversions: 0,
+                    revenue: 0,
                     resources: []
                 });
 
