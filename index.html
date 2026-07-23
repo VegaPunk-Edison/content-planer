@@ -332,18 +332,57 @@
             color: #d1d5db;
         }
 
-        .detail-date-input {
+        .date-wheel-picker {
+            position: relative;
+            display: flex;
+            gap: 0.5rem;
+            height: 96px;
+            background: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-            padding: 0.375rem 0.5rem;
-            font-size: 0.875rem;
-            color: #374151;
-            background: white;
+            border-radius: 0.5rem;
+            padding: 0 0.5rem;
         }
 
-        .detail-date-input:focus {
-            outline: none;
-            border-color: #3b82f6;
+        .date-wheel {
+            flex: 1;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            text-align: center;
+            scrollbar-width: none;
+        }
+
+        .date-wheel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-wheel-spacer {
+            height: 32px;
+        }
+
+        .date-wheel-item {
+            height: 32px;
+            line-height: 32px;
+            scroll-snap-align: center;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: color 0.15s, font-weight 0.15s;
+        }
+
+        .date-wheel-item.selected {
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .date-wheel-highlight {
+            position: absolute;
+            top: 32px;
+            left: 0;
+            right: 0;
+            height: 32px;
+            border-top: 1px solid #d1d5db;
+            border-bottom: 1px solid #d1d5db;
+            pointer-events: none;
         }
 
         .stat-input {
@@ -527,7 +566,13 @@
 
             <div class="mb-4">
                 <label class="text-xs text-gray-500 block mb-1">Upload-Datum</label>
-                <input type="date" id="detail-date" class="detail-date-input">
+                <div class="date-wheel-picker">
+                    <div class="date-wheel" id="wheel-day"></div>
+                    <div class="date-wheel" id="wheel-month"></div>
+                    <div class="date-wheel" id="wheel-year"></div>
+                    <div class="date-wheel-highlight"></div>
+                </div>
+                <button class="month-picker-btn month-picker-btn-confirm" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="app.applyWheelDate()">Datum übernehmen</button>
             </div>
 
             <div class="font-semibold mb-2">Ressourcen</div>
@@ -590,8 +635,8 @@
                 <div class="max-w-6xl mx-auto">
                     <h3 class="text-2xl font-bold mb-6">Aktive & geplante Contents</h3>
 
-                    <!-- Content Input -->
-                    <div class="todo-input-wrapper mb-6">
+                    <!-- Content Input: nur sichtbar, solange ein Format gewählt ist -->
+                    <div id="content-input-row" class="todo-input-wrapper mb-6" style="display: none;">
                         <div id="platform-indicator" class="format-badge" style="display: none; cursor: default;"></div>
                         <input
                             type="text"
@@ -692,7 +737,10 @@
                     });
                 });
                 document.getElementById('detail-resource-upload').addEventListener('change', (e) => this.handleResourceUpload(e));
-                document.getElementById('detail-date').addEventListener('change', (e) => this.updateContentDate(e.target.value));
+
+                this.wireWheelScroll('wheel-day', v => { this.wheelDay = v; });
+                this.wireWheelScroll('wheel-month', v => { this.wheelMonth = v; });
+                this.wireWheelScroll('wheel-year', v => { this.wheelYear = v; });
             }
 
             openMonthPicker() {
@@ -758,11 +806,16 @@
                 this.selectedFormat = format;
                 const input = document.getElementById('content-input');
                 input.value = '';
-                input.focus();
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('format-badge-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = format;
                 document.getElementById('creator-body').style.display = '';
+                this.updateInputRowVisibility();
+                input.focus();
+            }
+
+            updateInputRowVisibility() {
+                document.getElementById('content-input-row').style.display = this.selectedFormat ? 'flex' : 'none';
             }
 
             selectPlatform(platform) {
@@ -838,10 +891,10 @@
 
                 document.getElementById('content-creator-view').classList.add('active');
                 document.body.classList.add('modal-open');
-                document.getElementById('content-input').focus();
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
                 this.updatePlatformIndicator();
+                this.updateInputRowVisibility();
 
                 const dateKey = this.getDateKey(this.selectedDay);
                 const hasContent = (this.contents[dateKey] || []).length > 0;
@@ -862,6 +915,7 @@
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
                 this.updatePlatformIndicator();
+                this.updateInputRowVisibility();
                 this.activeTab = 'dashboard';
             }
 
@@ -935,8 +989,7 @@
                 document.getElementById('detail-likes').value = this.formatNumber(content.likes || 0);
 
                 const [year, month, day] = this.getDateKey(this.selectedDay).split('-').map(Number);
-                document.getElementById('detail-date').value =
-                    `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                this.buildDateWheels(day, month, year);
 
                 this.renderResourceList(content);
 
@@ -962,16 +1015,76 @@
                 this.render();
             }
 
-            updateContentDate(newDateValue) {
-                if (!newDateValue) return;
+            buildDateWheels(day, month, year) {
+                this.wheelDay = day;
+                this.wheelMonth = month;
+                this.wheelYear = year;
+
+                const days = Array.from({ length: 31 }, (_, i) => i + 1);
+                const monthValues = this.months.map((_, i) => i);
+                const years = Array.from({ length: 6 }, (_, i) => year - 2 + i);
+
+                this.renderWheel('wheel-day', days, day, v => v);
+                this.renderWheel('wheel-month', monthValues, month, v => this.months[v]);
+                this.renderWheel('wheel-year', years, year, v => v);
+            }
+
+            renderWheel(containerId, items, selected, formatFn) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '<div class="date-wheel-spacer"></div>' +
+                    items.map(v => `<div class="date-wheel-item ${v === selected ? 'selected' : ''}" data-value="${v}">${formatFn(v)}</div>`).join('') +
+                    '<div class="date-wheel-spacer"></div>';
+
+                container._wheelItems = items;
+                const index = Math.max(0, items.indexOf(selected));
+                container.scrollTop = index * 32;
+            }
+
+            wireWheelScroll(containerId, onSettle) {
+                const container = document.getElementById(containerId);
+                let timer = null;
+
+                const settle = () => {
+                    const items = container._wheelItems || [];
+                    if (items.length === 0) return;
+                    let index = Math.round(container.scrollTop / 32);
+                    index = Math.max(0, Math.min(items.length - 1, index));
+                    container.scrollTop = index * 32;
+                    Array.from(container.querySelectorAll('.date-wheel-item')).forEach((el, i) => {
+                        el.classList.toggle('selected', i === index);
+                    });
+                    onSettle(items[index]);
+                };
+
+                container.addEventListener('scroll', () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(settle, 120);
+                });
+
+                container.addEventListener('click', (e) => {
+                    const item = e.target.closest('.date-wheel-item');
+                    if (!item) return;
+                    const items = container._wheelItems || [];
+                    const index = items.indexOf(Number(item.dataset.value));
+                    if (index === -1) return;
+                    container.scrollTop = index * 32;
+                    settle();
+                });
+            }
+
+            applyWheelDate() {
                 const content = this.getSelectedContent();
                 if (!content) return;
 
                 const oldDateKey = this.getDateKey(this.selectedDay);
-                const [year, month, day] = newDateValue.split('-').map(Number);
-                const newDateKey = `${year}-${month - 1}-${day}`;
+                const daysInTargetMonth = new Date(this.wheelYear, this.wheelMonth + 1, 0).getDate();
+                const day = Math.min(this.wheelDay, daysInTargetMonth);
+                const newDateKey = `${this.wheelYear}-${this.wheelMonth}-${day}`;
 
-                if (newDateKey === oldDateKey) return;
+                if (newDateKey === oldDateKey) {
+                    this.closeContentDetail();
+                    return;
+                }
 
                 this.contents[oldDateKey] = (this.contents[oldDateKey] || []).filter(c => c.id !== content.id);
                 if (!this.contents[newDateKey]) this.contents[newDateKey] = [];
@@ -1166,6 +1279,7 @@
                 this.selectedFormat = null;
                 this.selectedPlatform = null;
                 this.updatePlatformIndicator();
+                this.updateInputRowVisibility();
                 document.getElementById('command-menu').classList.remove('active');
                 document.getElementById('platform-menu').classList.remove('active');
                 document.getElementById('format-badge').textContent = 'Format auswählen';
