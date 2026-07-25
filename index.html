@@ -766,7 +766,7 @@
         <div class="month-picker-content" style="max-width: 520px; text-align: left; max-height: 85vh; overflow-y: auto;">
             <input type="text" id="detail-title-input" class="detail-title-input mb-1">
 
-            <p class="text-sm text-gray-500 mb-1">Format:
+            <div class="text-sm text-gray-500 mb-1">Format:
                 <span style="position: relative; display: inline-block;">
                     <span id="detail-format" class="date-display-link" onclick="app.toggleFormatEditMenu()"></span>
                     <div id="detail-format-menu" class="command-menu">
@@ -778,9 +778,9 @@
                         <div class="command-menu-item" onclick="app.setContentFormat('🎬 Long Clip')">🎬 Long Clip</div>
                     </div>
                 </span>
-            </p>
+            </div>
 
-            <p class="text-sm text-gray-500 mb-4">Plattform:
+            <div class="text-sm text-gray-500 mb-4">Plattform:
                 <span style="position: relative; display: inline-block;">
                     <span id="detail-platform" class="date-display-link" onclick="app.togglePlatformEditMenu()"></span>
                     <div id="detail-platform-menu" class="command-menu">
@@ -796,14 +796,14 @@
                         </div>
                     </div>
                 </span>
-            </p>
+            </div>
 
-            <p class="text-sm text-gray-500 mb-4">Kampagne:
+            <div class="text-sm text-gray-500 mb-4">Kampagne:
                 <span style="position: relative; display: inline-block;">
                     <span id="detail-campaign" class="date-display-link" onclick="app.toggleCampaignEditMenu()"></span>
                     <div id="detail-campaign-menu" class="command-menu"></div>
                 </span>
-            </p>
+            </div>
 
             <div class="stat-row text-sm text-gray-500 mb-2"><span>👁️&nbsp;<input type="text" inputmode="numeric" id="detail-views" class="stat-input"></span><span class="stat-divider">|</span><span>💬&nbsp;<input type="text" inputmode="numeric" id="detail-comments" class="stat-input"></span><span class="stat-divider">|</span><span>❤️&nbsp;<input type="text" inputmode="numeric" id="detail-likes" class="stat-input"></span></div>
 
