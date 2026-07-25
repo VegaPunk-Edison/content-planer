@@ -1676,13 +1676,13 @@
             toggleCreatorDateWheel() {
                 const section = document.getElementById('creator-date-wheel-section');
                 const willOpen = section.style.display === 'none';
+                section.style.display = willOpen ? 'block' : 'none';
                 if (willOpen) {
                     this.jumpWheel = { day: this.selectedDay, month: this.currentDate.getMonth(), year: this.currentDate.getFullYear() };
                     this.renderWheel('wheel-jump-day', Array.from({ length: 31 }, (_, i) => i + 1), this.jumpWheel.day, v => v);
                     this.renderWheel('wheel-jump-month', this.months.map((_, i) => i), this.jumpWheel.month, v => this.months[v]);
                     this.renderWheel('wheel-jump-year', Array.from({ length: 6 }, (_, i) => this.jumpWheel.year - 2 + i), this.jumpWheel.year, v => v);
                 }
-                section.style.display = willOpen ? 'block' : 'none';
             }
 
             confirmCreatorDateJump() {
@@ -1754,7 +1754,11 @@
 
             toggleDateWheel() {
                 const section = document.getElementById('date-wheel-section');
-                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+                const willOpen = section.style.display === 'none';
+                section.style.display = willOpen ? 'block' : 'none';
+                if (willOpen) {
+                    this.buildDateWheels(this.wheelDay, this.wheelMonth, this.wheelYear);
+                }
             }
 
             applyWheelDate() {
@@ -2017,13 +2021,11 @@
                     ? this.campaignDraftStart.split('-').map(Number)
                     : [today.getFullYear(), today.getMonth() + 1, today.getDate()];
                 this.campaignStartWheel = { day: sd, month: sm - 1, year: sy };
-                this.buildCampaignWheel('campaign-start', sd, sm - 1, sy);
 
                 const [ey, em, ed] = this.campaignDraftEnd
                     ? this.campaignDraftEnd.split('-').map(Number)
                     : [sy, sm, sd];
                 this.campaignEndWheel = { day: ed, month: em - 1, year: ey };
-                this.buildCampaignWheel('campaign-end', ed, em - 1, ey);
 
                 document.getElementById('campaign-start-display').textContent =
                     this.campaignDraftStart ? this.formatCampaignDate(this.campaignDraftStart) : 'nicht festgelegt';
@@ -2199,7 +2201,12 @@
 
             toggleCampaignStartWheel() {
                 const section = document.getElementById('campaign-start-wheel-section');
-                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+                const willOpen = section.style.display === 'none';
+                section.style.display = willOpen ? 'block' : 'none';
+                if (willOpen) {
+                    const w = this.campaignStartWheel;
+                    this.buildCampaignWheel('campaign-start', w.day, w.month, w.year);
+                }
             }
 
             confirmCampaignStart() {
@@ -2212,7 +2219,12 @@
 
             toggleCampaignEndWheel() {
                 const section = document.getElementById('campaign-end-wheel-section');
-                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+                const willOpen = section.style.display === 'none';
+                section.style.display = willOpen ? 'block' : 'none';
+                if (willOpen) {
+                    const w = this.campaignEndWheel;
+                    this.buildCampaignWheel('campaign-end', w.day, w.month, w.year);
+                }
             }
 
             confirmCampaignEnd() {
