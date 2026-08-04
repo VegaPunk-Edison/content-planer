@@ -205,6 +205,64 @@
             flex-direction: column;
         }
 
+        #ideas-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+        }
+
+        #ideas-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #footer-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem 0 calc(0.5rem + env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
+
+        .footer-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.15rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.25rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .footer-nav-item:hover {
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .footer-nav-icon {
+            font-size: 1.375rem;
+        }
+
+        .footer-nav-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
         .header-bar {
             background: white;
             border-bottom: 1px solid #e5e7eb;
@@ -299,6 +357,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
+            padding-bottom: 5rem;
         }
 
         .tab-content.active {
@@ -746,7 +805,7 @@
 
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-4">
+<body class="bg-gray-50 min-h-screen p-4" style="padding-bottom: 5rem;">
     <!-- MONTH PICKER -->
     <div id="month-picker" class="month-picker">
         <div class="month-picker-content">
@@ -1058,10 +1117,10 @@
         <!-- Tabs + Tab-Inhalte: erst sichtbar, sobald ein Format gewählt wurde -->
         <div id="creator-body" class="creator-body">
             <div class="tab-bar">
-                <div class="tab active" onclick="app.switchTab('dashboard')">Dashboard</div>
-                <div class="tab" onclick="app.switchTab('campaigns')">Kampagnen</div>
-                <div class="tab" onclick="app.switchTab('stats')">Stats</div>
-                <div class="tab" onclick="app.switchTab('archive')">Archive</div>
+                <div class="tab active" data-tab="dashboard" onclick="app.switchTab('dashboard')">Dashboard</div>
+                <div class="tab" data-tab="campaigns" onclick="app.switchTab('campaigns')">Kampagnen</div>
+                <div class="tab" data-tab="stats" onclick="app.switchTab('stats')">Stats</div>
+                <div class="tab" data-tab="archive" onclick="app.switchTab('archive')">Archive</div>
             </div>
 
             <!-- Dashboard Tab -->
@@ -1134,6 +1193,61 @@
         </div>
     </div>
 
+    <!-- IDEEN-SAMMELSTELLE -->
+    <div id="ideas-view">
+        <div class="header-bar">
+            <div class="header-title">
+                <button id="close-ideas" class="back-button">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h2 class="text-xl font-bold">💡 Ideen-Sammelstelle</h2>
+            </div>
+        </div>
+        <div style="flex: 1; overflow-y: auto; padding: 2rem; padding-bottom: 5rem;">
+            <div class="max-w-6xl mx-auto">
+                <div class="todo-input-wrapper mb-6">
+                    <input type="text" id="idea-input" placeholder="Neue Content-Idee festhalten... (noch ohne Datum)" autocomplete="off">
+                </div>
+                <div id="ideas-list" class="content-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IDEE EINPLANEN -->
+    <div id="idea-schedule-modal" class="month-picker" style="z-index: 120;">
+        <div class="month-picker-content" style="max-width: 360px; text-align: left;">
+            <h3 class="text-lg font-bold mb-3">Idee einplanen</h3>
+            <div class="date-wheel-picker">
+                <div class="date-wheel" id="wheel-idea-day"></div>
+                <div class="date-wheel" id="wheel-idea-month"></div>
+                <div class="date-wheel" id="wheel-idea-year"></div>
+                <div class="date-wheel-highlight"></div>
+            </div>
+            <div class="month-picker-footer" style="margin-top: 1rem;">
+                <button class="month-picker-btn month-picker-btn-cancel" onclick="app.closeIdeaSchedule()">Abbrechen</button>
+                <button class="month-picker-btn month-picker-btn-confirm" onclick="app.confirmIdeaSchedule()">Einplanen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER NAVIGATION -->
+    <div id="footer-nav">
+        <div class="footer-nav-item" onclick="app.goHome()">
+            <span class="footer-nav-icon">📅</span>
+            <span class="footer-nav-label">Content</span>
+        </div>
+        <div class="footer-nav-item" onclick="app.openCampaignsQuickAccess()">
+            <span class="footer-nav-icon">📣</span>
+            <span class="footer-nav-label">Kampagnen</span>
+        </div>
+        <div class="footer-nav-item" onclick="app.openIdeasView()">
+            <span class="footer-nav-icon">💡</span>
+            <span class="footer-nav-label">Ideen</span>
+        </div>
+    </div>
+
     <script>
         class CalendarApp {
             constructor() {
@@ -1155,6 +1269,9 @@
                 this.campaignIsolatedField = null;
                 this.contents = this.loadContents();
                 this.campaigns = this.loadCampaigns();
+                this.ideas = this.loadIdeas();
+                this.schedulingIdeaId = null;
+                this.ideaScheduleWheel = null;
                 this.activeTab = 'dashboard';
                 this.init();
             }
@@ -1163,6 +1280,13 @@
                 this.render();
                 document.getElementById('backup-import-input').addEventListener('change', (e) => this.importBackup(e));
                 document.getElementById('close-creator').addEventListener('click', () => this.closeCreator());
+                document.getElementById('close-ideas').addEventListener('click', () => this.closeIdeasView());
+                document.getElementById('idea-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addIdea();
+                });
+                this.wireWheelScroll('wheel-idea-day', v => { this.ideaScheduleWheel.day = v; });
+                this.wireWheelScroll('wheel-idea-month', v => { this.ideaScheduleWheel.month = v; });
+                this.wireWheelScroll('wheel-idea-year', v => { this.ideaScheduleWheel.year = v; });
                 document.getElementById('content-input').addEventListener('keypress', (e) => {
                     if (e.key !== 'Enter') return;
                     const input = e.target;
@@ -1366,6 +1490,126 @@
                 localStorage.setItem('calendarCampaigns', JSON.stringify(this.campaigns));
             }
 
+            loadIdeas() {
+                const stored = localStorage.getItem('calendarIdeas');
+                return stored ? JSON.parse(stored) : [];
+            }
+
+            saveIdeas() {
+                localStorage.setItem('calendarIdeas', JSON.stringify(this.ideas));
+            }
+
+            goHome() {
+                document.getElementById('content-creator-view').classList.remove('active');
+                document.body.classList.remove('modal-open');
+                document.getElementById('ideas-view').classList.remove('active');
+                this.render();
+            }
+
+            openCampaignsQuickAccess() {
+                const today = new Date();
+                this.currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                this.selectedDay = today.getDate();
+                document.getElementById('ideas-view').classList.remove('active');
+                this.openCreator();
+                this.switchTab('campaigns');
+            }
+
+            openIdeasView() {
+                document.getElementById('content-creator-view').classList.remove('active');
+                document.body.classList.remove('modal-open');
+                document.getElementById('idea-input').value = '';
+                this.renderIdeasList();
+                document.getElementById('ideas-view').classList.add('active');
+            }
+
+            closeIdeasView() {
+                document.getElementById('ideas-view').classList.remove('active');
+            }
+
+            addIdea() {
+                const input = document.getElementById('idea-input');
+                const title = input.value.trim();
+                if (!title) return;
+
+                this.ideas.push({ id: Date.now(), title, createdAt: new Date().toISOString() });
+                this.saveIdeas();
+                input.value = '';
+                this.renderIdeasList();
+            }
+
+            deleteIdea(id) {
+                this.ideas = this.ideas.filter(i => i.id !== id);
+                this.saveIdeas();
+                this.renderIdeasList();
+            }
+
+            renderIdeasList() {
+                const list = document.getElementById('ideas-list');
+
+                if (this.ideas.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center py-8">Noch keine Ideen festgehalten</p>';
+                    return;
+                }
+
+                list.innerHTML = [...this.ideas].reverse().map(idea => `
+                    <div class="content-card">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">${this.escapeHtml(idea.title)}</h4>
+                            <span class="resource-remove" onclick="app.deleteIdea(${idea.id})">✕</span>
+                        </div>
+                        <span class="date-display-link" style="font-size: 0.875rem;" onclick="app.openIdeaSchedule(${idea.id})">📅 Einplanen</span>
+                    </div>
+                `).join('');
+            }
+
+            openIdeaSchedule(id) {
+                this.schedulingIdeaId = id;
+                const today = new Date();
+                this.ideaScheduleWheel = { day: today.getDate(), month: today.getMonth(), year: today.getFullYear() };
+                document.getElementById('idea-schedule-modal').classList.add('active');
+                this.renderWheel('wheel-idea-day', Array.from({ length: 31 }, (_, i) => i + 1), this.ideaScheduleWheel.day, v => v);
+                this.renderWheel('wheel-idea-month', this.months.map((_, i) => i), this.ideaScheduleWheel.month, v => this.months[v]);
+                this.renderWheel('wheel-idea-year', Array.from({ length: 6 }, (_, i) => this.ideaScheduleWheel.year - 2 + i), this.ideaScheduleWheel.year, v => v);
+            }
+
+            closeIdeaSchedule() {
+                document.getElementById('idea-schedule-modal').classList.remove('active');
+                this.schedulingIdeaId = null;
+            }
+
+            confirmIdeaSchedule() {
+                const idea = this.ideas.find(i => i.id === this.schedulingIdeaId);
+                if (!idea) return;
+
+                const w = this.ideaScheduleWheel;
+                const dateKey = `${w.year}-${w.month}-${w.day}`;
+                if (!this.contents[dateKey]) this.contents[dateKey] = [];
+
+                this.contents[dateKey].push({
+                    id: Date.now(),
+                    title: idea.title,
+                    format: '📱 Short-form',
+                    platform: null,
+                    status: 'draft',
+                    views: 0,
+                    comments: 0,
+                    likes: 0,
+                    spend: 0,
+                    conversions: 0,
+                    revenue: 0,
+                    resources: [],
+                    campaignId: null
+                });
+
+                this.ideas = this.ideas.filter(i => i.id !== idea.id);
+                this.saveContents();
+                this.saveIdeas();
+                this.closeIdeaSchedule();
+                this.renderIdeasList();
+                this.render();
+            }
+
             exportBackup() {
                 const data = {
                     contents: this.contents,
@@ -1497,9 +1741,8 @@
                 this.activeTab = tab;
 
                 document.querySelectorAll('.tab').forEach(t => {
-                    t.classList.remove('active');
+                    t.classList.toggle('active', t.dataset.tab === tab);
                 });
-                event.target.classList.add('active');
 
                 document.querySelectorAll('.tab-content').forEach(t => {
                     t.classList.remove('active');
