@@ -216,6 +216,24 @@
             flex-direction: column;
         }
 
+        #termine-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+        }
+
+        #termine-view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
         #ideas-view {
             display: none;
             position: fixed;
@@ -1204,6 +1222,25 @@
         </div>
     </div>
 
+    <!-- ALLE TERMINE -->
+    <div id="termine-view">
+        <div class="header-bar">
+            <div class="header-title">
+                <button id="close-termine" class="back-button">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h2 class="text-xl font-bold">📅 Alle Termine</h2>
+            </div>
+        </div>
+        <div style="flex: 1; overflow-y: auto; padding: 2rem; padding-bottom: 5rem;">
+            <div class="max-w-6xl mx-auto">
+                <div id="termine-list" class="content-list"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- IDEEN-SAMMELSTELLE -->
     <div id="ideas-view">
         <div class="header-bar">
@@ -1245,7 +1282,7 @@
 
     <!-- FOOTER NAVIGATION -->
     <div id="footer-nav">
-        <div class="footer-nav-item" onclick="app.goHome()">
+        <div class="footer-nav-item" onclick="app.openTermineView()">
             <span class="footer-nav-icon">📅</span>
             <span class="footer-nav-label">Content</span>
         </div>
@@ -1292,6 +1329,7 @@
                 document.getElementById('backup-import-input').addEventListener('change', (e) => this.importBackup(e));
                 document.getElementById('close-creator').addEventListener('click', () => this.closeCreator());
                 document.getElementById('close-ideas').addEventListener('click', () => this.closeIdeasView());
+                document.getElementById('close-termine').addEventListener('click', () => this.goHome());
                 document.getElementById('idea-input').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.addIdea();
                 });
@@ -1514,6 +1552,7 @@
                 document.getElementById('content-creator-view').classList.remove('active');
                 document.body.classList.remove('modal-open');
                 document.getElementById('ideas-view').classList.remove('active');
+                document.getElementById('termine-view').classList.remove('active');
                 this.render();
             }
 
@@ -1522,13 +1561,59 @@
                 this.currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
                 this.selectedDay = today.getDate();
                 document.getElementById('ideas-view').classList.remove('active');
+                document.getElementById('termine-view').classList.remove('active');
                 this.openCreator();
                 this.switchTab('campaigns');
+            }
+
+            openTermineView() {
+                document.getElementById('content-creator-view').classList.remove('active');
+                document.body.classList.remove('modal-open');
+                document.getElementById('ideas-view').classList.remove('active');
+                this.renderTermineList();
+                document.getElementById('termine-view').classList.add('active');
+            }
+
+            closeTermineView() {
+                document.getElementById('termine-view').classList.remove('active');
+            }
+
+            renderTermineList() {
+                const list = document.getElementById('termine-list');
+                const items = this.getAllContentsFlat();
+
+                if (items.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center py-8">Noch keine Termine geplant</p>';
+                    return;
+                }
+
+                items.sort((a, b) => (a.year * 10000 + a.month * 100 + a.day) - (b.year * 10000 + b.month * 100 + b.day));
+
+                list.innerHTML = items.map(({ content, dateKey, day, month, year }) => `
+                    <div class="content-card clickable" onclick="app.openTermineItem('${dateKey}', ${content.id})">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-lg">${this.escapeHtml(content.title)}</h4>
+                            <span class="content-status status-${content.status}">${content.status.toUpperCase()}</span>
+                        </div>
+                        <p class="text-sm text-blue-600 mb-2">${content.format}${content.platform ? ' · ' + this.escapeHtml(content.platform) : ''}</p>
+                        <p class="text-sm text-gray-500">${day}. ${this.months[month]} ${year}</p>
+                    </div>
+                `).join('');
+            }
+
+            openTermineItem(dateKey, contentId) {
+                const [year, month, day] = dateKey.split('-').map(Number);
+                this.currentDate = new Date(year, month, 1);
+                this.selectedDay = day;
+                this.closeTermineView();
+                this.openCreator();
+                this.openContentDetail(contentId);
             }
 
             openIdeasView() {
                 document.getElementById('content-creator-view').classList.remove('active');
                 document.body.classList.remove('modal-open');
+                document.getElementById('termine-view').classList.remove('active');
                 document.getElementById('idea-input').value = '';
                 this.renderIdeasList();
                 document.getElementById('ideas-view').classList.add('active');
