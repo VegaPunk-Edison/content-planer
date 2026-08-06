@@ -44,6 +44,7 @@
             position: relative;
             aspect-ratio: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             border-radius: 0.5rem;
@@ -53,6 +54,31 @@
             transition: all 0.2s;
             background: #f3f4f6;
             color: #1f2937;
+        }
+
+        .calendar-day-number {
+            line-height: 1.1;
+        }
+
+        .calendar-day-weekday {
+            font-size: 0.65rem;
+            font-weight: 500;
+            opacity: 0.65;
+            margin-top: 0.15rem;
+        }
+
+        .kw-badge {
+            position: absolute;
+            bottom: 4px;
+            left: 5px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #6b7280;
+        }
+
+        .calendar-day.today .kw-badge {
+            color: rgba(255, 255, 255, 0.85);
         }
         .calendar-day:hover {
             background: #dbeafe;
@@ -1304,6 +1330,7 @@
                 this.months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
                               'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
                 this.dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+                this.dayNamesShort = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
                 this.platforms = ['Skool', 'YouTube', 'Instagram', 'TikTok', 'Snapchat', 'LinkedIn', 'Facebook'];
                 this.selectedDay = null;
                 this.selectedFormat = null;
@@ -3105,6 +3132,13 @@
                     const inCampaign = this.isDayInCampaignRange(day);
                     const cls = isToday ? 'today' : (inCampaign ? 'campaign-active' : '');
 
+                    const dateObj = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+                    const weekday = this.dayNamesShort[dateObj.getDay()];
+                    const isWeekStart = dateObj.getDay() === 1 || day === 1;
+                    const kwHtml = isWeekStart
+                        ? `<span class="kw-badge">KW ${this.getISOWeekNumber(dateObj)}</span>`
+                        : '';
+
                     const dayContents = this.contents[this.getDateKey(day)] || [];
                     const platforms = [...new Set(
                         dayContents
@@ -3118,12 +3152,20 @@
                           ).join('')}</div>`
                         : '';
 
-                    html += `<div class="calendar-day ${cls}" onclick="app.selectDay(${day})">${dotsHtml}${day}</div>`;
+                    html += `<div class="calendar-day ${cls}" onclick="app.selectDay(${day})">${dotsHtml}<span class="calendar-day-number">${day}</span><span class="calendar-day-weekday">${weekday}</span>${kwHtml}</div>`;
                 });
 
                 html += `</div>`;
 
                 document.getElementById('calendar-container').innerHTML = html;
+            }
+
+            getISOWeekNumber(date) {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             }
 
             isDayInCampaignRange(day) {
