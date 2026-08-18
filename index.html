@@ -1880,6 +1880,10 @@
                 document.getElementById('dashboard-header-actions').style.display = tab === 'dashboard' ? '' : 'none';
                 document.getElementById('campaign-start-header-badge').style.display = tab === 'campaigns' ? 'inline-block' : 'none';
 
+                if (tab !== 'dashboard') {
+                    document.getElementById('creator-body').style.display = '';
+                }
+
                 if (tab === 'dashboard') this.loadDashboard();
                 if (tab === 'campaigns') this.renderCampaignsTab();
                 if (tab === 'stats') this.loadStats();
