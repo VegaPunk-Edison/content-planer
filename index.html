@@ -1344,6 +1344,43 @@
     </div>
 
     <script>
+        // IndexedDB-Speicher: ersetzt localStorage (max. ~5-10 MB) durch einen
+        // Speicher mit deutlich höherem Limit (browserabhängig, i.d.R. mehrere hundert MB),
+        // damit auch größere hochgeladene Dateien zuverlässig gespeichert werden.
+        const IDB_NAME = 'contentPlanerDB';
+        const IDB_STORE = 'kv';
+
+        function idbOpen() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_NAME, 1);
+                req.onupgradeneeded = () => {
+                    req.result.createObjectStore(IDB_STORE);
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function idbGet(key) {
+            const db = await idbOpen();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readonly');
+                const req = tx.objectStore(IDB_STORE).get(key);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function idbSet(key, value) {
+            const db = await idbOpen();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(value, key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
         class CalendarApp {
             constructor() {
                 this.currentDate = new Date();
@@ -1363,12 +1400,21 @@
                 this.campaignVisibleSteps = 1;
                 this.campaignInlineEditMode = false;
                 this.campaignIsolatedField = null;
-                this.contents = this.loadContents();
-                this.campaigns = this.loadCampaigns();
-                this.ideas = this.loadIdeas();
+                this.contents = {};
+                this.campaigns = [];
+                this.ideas = [];
                 this.schedulingIdeaId = null;
                 this.ideaScheduleWheel = null;
                 this.activeTab = 'dashboard';
+                this.bootstrap();
+            }
+
+            async bootstrap() {
+                [this.contents, this.campaigns, this.ideas] = await Promise.all([
+                    this.loadContents(),
+                    this.loadCampaigns(),
+                    this.loadIdeas()
+                ]);
                 this.init();
             }
 
@@ -1569,31 +1615,43 @@
                 document.getElementById('format-badge-menu').classList.toggle('active');
             }
 
-            loadContents() {
+            async loadContents() {
+                const idbValue = await idbGet('calendarContents');
+                if (idbValue !== undefined) return idbValue;
                 const stored = localStorage.getItem('calendarContents');
-                return stored ? JSON.parse(stored) : {};
+                const migrated = stored ? JSON.parse(stored) : {};
+                if (stored) await idbSet('calendarContents', migrated);
+                return migrated;
             }
 
             saveContents() {
-                localStorage.setItem('calendarContents', JSON.stringify(this.contents));
+                return idbSet('calendarContents', this.contents);
             }
 
-            loadCampaigns() {
+            async loadCampaigns() {
+                const idbValue = await idbGet('calendarCampaigns');
+                if (idbValue !== undefined) return idbValue;
                 const stored = localStorage.getItem('calendarCampaigns');
-                return stored ? JSON.parse(stored) : [];
+                const migrated = stored ? JSON.parse(stored) : [];
+                if (stored) await idbSet('calendarCampaigns', migrated);
+                return migrated;
             }
 
             saveCampaigns() {
-                localStorage.setItem('calendarCampaigns', JSON.stringify(this.campaigns));
+                return idbSet('calendarCampaigns', this.campaigns);
             }
 
-            loadIdeas() {
+            async loadIdeas() {
+                const idbValue = await idbGet('calendarIdeas');
+                if (idbValue !== undefined) return idbValue;
                 const stored = localStorage.getItem('calendarIdeas');
-                return stored ? JSON.parse(stored) : [];
+                const migrated = stored ? JSON.parse(stored) : [];
+                if (stored) await idbSet('calendarIdeas', migrated);
+                return migrated;
             }
 
             saveIdeas() {
-                localStorage.setItem('calendarIdeas', JSON.stringify(this.ideas));
+                return idbSet('calendarIdeas', this.ideas);
             }
 
             goHome() {
@@ -2225,11 +2283,9 @@
                         });
                         pending--;
                         if (pending === 0) {
-                            try {
-                                this.saveContents();
-                            } catch (err) {
-                                alert('Datei(en) konnten nicht gespeichert werden (Speicherplatz voll).');
-                            }
+                            this.saveContents().catch(err => {
+                                alert('Datei(en) konnten nicht gespeichert werden.');
+                            });
                             this.renderResourceList(content);
                         }
                     };
@@ -2691,11 +2747,9 @@
                         pending--;
                         if (pending === 0) {
                             if (this.editingCampaignId) {
-                                try {
-                                    this.saveCampaigns();
-                                } catch (err) {
-                                    alert('Datei(en) konnten nicht gespeichert werden (Speicherplatz voll).');
-                                }
+                                this.saveCampaigns().catch(err => {
+                                    alert('Datei(en) konnten nicht gespeichert werden.');
+                                });
                             }
                             this.renderCampaignResourceList(category);
                         }
@@ -2808,11 +2862,9 @@
                     });
                 }
 
-                try {
-                    this.saveCampaigns();
-                } catch (err) {
-                    alert('Kampagne konnte nicht vollständig gespeichert werden (Speicherplatz voll). Bitte entferne ein paar hochgeladene Dateien und versuche es erneut.');
-                }
+                this.saveCampaigns().catch(err => {
+                    alert('Kampagne konnte nicht vollständig gespeichert werden. Bitte versuche es erneut.');
+                });
             }
 
             saveCampaign() {
