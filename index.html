@@ -2808,7 +2808,11 @@
                     });
                 }
 
-                this.saveCampaigns();
+                try {
+                    this.saveCampaigns();
+                } catch (err) {
+                    alert('Kampagne konnte nicht vollständig gespeichert werden (Speicherplatz voll). Bitte entferne ein paar hochgeladene Dateien und versuche es erneut.');
+                }
             }
 
             saveCampaign() {
