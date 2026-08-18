@@ -81,6 +81,10 @@
         .calendar-day.today .kw-badge {
             color: rgba(255, 255, 255, 0.85);
         }
+        .calendar-day.monday {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
         .calendar-day:hover {
             background: #dbeafe;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -3131,11 +3135,15 @@
                 calendarDays.forEach(day => {
                     const isToday = this.isToday(day);
                     const inCampaign = this.isDayInCampaignRange(day);
-                    const cls = isToday ? 'today' : (inCampaign ? 'campaign-active' : '');
-
                     const dateObj = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), day);
+                    const isMonday = dateObj.getDay() === 1;
+                    const cls = [
+                        isToday ? 'today' : (inCampaign ? 'campaign-active' : ''),
+                        isMonday ? 'monday' : ''
+                    ].filter(Boolean).join(' ');
+
                     const weekday = this.dayNamesShort[dateObj.getDay()];
-                    const isWeekStart = dateObj.getDay() === 1 || day === 1;
+                    const isWeekStart = isMonday || day === 1;
                     const kwHtml = isWeekStart
                         ? `<span class="kw-badge">KW ${this.getISOWeekNumber(dateObj)}</span>`
                         : '';
