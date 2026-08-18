@@ -2892,7 +2892,15 @@
             }
 
             handleCampaignCloseX() {
-                if (this.editingCampaignId || this.hasCampaignDraftContent()) {
+                if (this.editingCampaignId) {
+                    this.persistCampaignFromForm();
+                    this.closeCampaignModal();
+                    this.renderCampaignsTab();
+                    this.render();
+                    return;
+                }
+
+                if (this.hasCampaignDraftContent()) {
                     document.getElementById('campaign-close-confirm-modal').classList.add('active');
                 } else {
                     this.closeCampaignModal();
